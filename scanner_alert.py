@@ -56,6 +56,7 @@ def save_alert_history(history):
 
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+TELEGRAM_CHAT_ID = CHAT_ID
 
 TELEGRAM_URL = (
     f"https://api.telegram.org/bot"
