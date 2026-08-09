@@ -1112,6 +1112,94 @@ def analyze_market():
 
         return None
 
+# =========================
+# KOSDAQ 시장환경 분석
+# =========================
+
+def analyze_kosdaq():
+
+    try:
+
+        df = yf.download(
+            "^KQ11",
+            period="3mo",
+            interval="1d",
+            auto_adjust=False,
+            progress=False
+        )
+
+        if df.empty:
+            return None
+
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+
+        df = df.dropna()
+
+        if len(df) < 30:
+            return None
+
+        close = df["Close"]
+
+        ma20 = (
+            close
+            .rolling(20)
+            .mean()
+            .iloc[-1]
+        )
+
+        current_price = float(
+            close.iloc[-1]
+        )
+
+        previous_price = float(
+            close.iloc[-6]
+        )
+
+        return_5 = (
+            current_price / previous_price - 1
+        ) * 100
+
+        score = 0
+
+        if current_price > ma20:
+            score += 5
+
+        if return_5 > 2:
+            score += 5
+
+        elif return_5 < -2:
+            score -= 5
+
+        if score >= 10:
+            market_status = "강한 상승장"
+
+        elif score >= 5:
+            market_status = "상승장"
+
+        elif score <= -5:
+            market_status = "약세장"
+
+        else:
+            market_status = "중립"
+
+        return {
+            "시장": "KOSDAQ",
+            "현재가": round(current_price, 2),
+            "20일선": round(float(ma20), 2),
+            "5일수익률": round(return_5, 2),
+            "점수": score,
+            "상태": market_status
+        }
+
+    except Exception as e:
+
+        print(
+            f"KOSDAQ 시장 분석 오류 : {e}"
+        )
+
+        return None
+
 
 # =========================
 # 메인
@@ -1133,6 +1221,7 @@ print("데이터 다운로드 중...")
 
 
 market = analyze_market()
+kosdaq = analyze_kosdaq()
 
 if market is not None:
 
@@ -1160,6 +1249,33 @@ if market is not None:
 else:
 
     print("시장 상태 : 분석 실패")
+
+if kosdaq is not None:
+
+    print(
+        f"KOSDAQ 상태 : "
+        f"{kosdaq['상태']} "
+        f"({kosdaq['점수']:+d}점)"
+    )
+
+    print(
+        f"KOSDAQ 현재가 : "
+        f"{kosdaq['현재가']}"
+    )
+
+    print(
+        f"KOSDAQ 20일선 : "
+        f"{kosdaq['20일선']}"
+    )
+
+    print(
+        f"KOSDAQ 5일 수익률 : "
+        f"{kosdaq['5일수익률']:+.2f}%"
+    )
+
+else:
+
+    print("KOSDAQ 상태 : 분석 실패")
     
 
 results = []
