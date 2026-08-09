@@ -377,6 +377,60 @@ def analyze_stock(name, ticker):
         breakout = (
             close > previous_high
         )
+        
+
+        # =========================
+        # 캔들 패턴
+        # =========================
+
+        open_price = float(
+            df["Open"].iloc[-1]
+        )
+
+        high_price = float(
+            df["High"].iloc[-1]
+        )
+
+        low_price = float(
+            df["Low"].iloc[-1]
+        )
+
+        body_size = abs(
+            close - open_price
+        )
+
+        candle_range = (
+            high_price - low_price
+        )
+
+        if candle_range > 0:
+
+            body_ratio = (
+                body_size / candle_range
+            )
+
+        else:
+
+            body_ratio = 0
+
+
+        if (
+            close > open_price
+            and body_ratio >= 0.7
+        ):
+
+            candle_signal = "강한 양봉"
+
+        elif (
+            close < open_price
+            and body_ratio >= 0.7
+        ):
+
+            candle_signal = "강한 음봉"
+
+        else:
+
+            candle_signal = "중립"
 
 
         # =========================
@@ -584,6 +638,18 @@ def analyze_stock(name, ticker):
 
             score += 10
 
+        # =========================
+        # 캔들 패턴 점수
+        # =========================
+
+        if candle_signal == "강한 양봉":
+
+            core += 5
+
+        elif candle_signal == "강한 음봉":
+
+            score -= 5
+
 
         # =========================
         # 변동성
@@ -746,6 +812,8 @@ def analyze_stock(name, ticker):
             ),
 
             "고점돌파": breakout,
+
+            "캔들신호": candle_signal,
 
             "RSI": round(
                 rsi,
@@ -1015,6 +1083,9 @@ else:
 
         f"고점 돌파 : "
         f"{'발생' if top['고점돌파'] else '없음'}\n\n"
+
+        f"캔들 신호 : "
+        f"{top['캔들신호']}\n\n"
 
         f"RSI : {top['RSI']:.2f}\n"
 
