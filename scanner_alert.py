@@ -4,7 +4,6 @@ import requests
 from datetime import datetime
 import json
 import os
-import FinanceDataReader as fdr
 
 
 # =========================
