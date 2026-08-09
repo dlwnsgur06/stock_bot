@@ -1176,7 +1176,18 @@ result = analyze_stock(
     ticker
 )
 
-if result is not None:
+if result is None:
+
+    print(
+        f"❌ {name} → 분석 결과 없음"
+    )
+
+else:
+
+    print(
+        f"✅ {name} → 분석 성공 / "
+        f"점수 {result['점수']}"
+    )
 
     if market is not None:
 
