@@ -126,10 +126,13 @@ def check_buy_message():
 
         data = response.json()
 
+        print("Telegram 업데이트 확인:", data)
+
         if not data.get("ok"):
             return
 
         holdings = load_holdings()
+        
 
         for update in data.get("result", []):
 
