@@ -364,6 +364,20 @@ def analyze_stock(name, ticker):
             / close
         ) * 100
 
+        # =========================
+        # 고점 돌파 (Breakout)
+        # =========================
+
+        previous_high = float(
+            df["High"]
+            .iloc[-21:-1]
+            .max()
+        )
+
+        breakout = (
+            close > previous_high
+        )
+
 
         # =========================
         # 골든크로스 / 데드크로스
@@ -562,6 +576,14 @@ def analyze_stock(name, ticker):
 
             score -= 5
 
+        # =========================
+        # 고점 돌파 점수
+        # =========================
+
+        if breakout:
+
+            score += 10
+
 
         # =========================
         # 변동성
@@ -717,6 +739,13 @@ def analyze_stock(name, ticker):
                 resistance_distance,
                 2
             ),
+
+            "이전고점": round(
+                previous_high,
+                2
+            ),
+
+            "고점돌파": breakout,
 
             "RSI": round(
                 rsi,
@@ -980,6 +1009,12 @@ else:
         f"저항선 : "
         f"{top['저항선']:,.0f}원 "
         f"(현재가 대비 +{top['저항선거리']:.2f}%)\n\n"
+
+        f"이전 20일 고점 : "
+        f"{top['이전고점']:,.0f}원\n"
+
+        f"고점 돌파 : "
+        f"{'발생' if top['고점돌파'] else '없음'}\n\n"
 
         f"RSI : {top['RSI']:.2f}\n"
 
