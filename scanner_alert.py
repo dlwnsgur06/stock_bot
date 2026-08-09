@@ -280,6 +280,81 @@ def check_buy_message():
         print(
             f"매수 메시지 확인 오류 : {e}"
         )
+
+# =========================
+# 국내 전체 종목 목록
+# =========================
+
+def get_all_stocks():
+
+    stocks = {}
+
+    try:
+
+        krx = fdr.StockListing("KRX")
+
+        for _, row in krx.iterrows():
+
+            ticker = str(
+                row["Code"]
+            ).strip()
+
+            name = str(
+                row["Name"]
+            ).strip()
+
+            if not ticker or not name:
+                continue
+
+            market = str(
+                row.get("Market", "")
+            ).strip()
+
+            if market == "KOSPI":
+
+                market_code = ".KS"
+
+            elif market == "KOSDAQ":
+
+                market_code = ".KQ"
+
+            else:
+
+                continue
+
+            stocks[name] = (
+                ticker + market_code
+            )
+
+        print()
+        print("==============================")
+        print(" 국내 전체 종목 목록")
+        print("==============================")
+
+        print(
+            f"KOSPI : "
+            f"{sum(1 for x in stocks.values() if x.endswith('.KS'))}개"
+        )
+
+        print(
+            f"KOSDAQ : "
+            f"{sum(1 for x in stocks.values() if x.endswith('.KQ'))}개"
+        )
+
+        print(
+            f"전체 : {len(stocks)}개"
+        )
+
+        return stocks
+
+    except Exception as e:
+
+        print()
+        print(
+            f"전체 종목 목록 가져오기 오류 : {e}"
+        )
+
+        return {}
         
 
 # =========================
@@ -298,6 +373,21 @@ STOCKS = {
     "포스코퓨처엠": "003670.KS",
     "LS": "006260.KS"
 }
+
+print()
+print("==============================")
+print(" 전체 종목 테스트")
+print("==============================")
+
+all_stocks = get_all_stocks()
+
+print()
+
+for name, ticker in list(all_stocks.items())[:20]:
+
+    print(
+        f"{name} : {ticker}"
+    )
 
 
 # =========================
