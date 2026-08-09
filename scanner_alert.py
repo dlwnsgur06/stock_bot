@@ -286,7 +286,7 @@ def analyze_stock(name, ticker):
             .mean()
         )
 
-         bb_std = (
+        bb_std = (
             df["Close"]
             .rolling(20)
             .std()
