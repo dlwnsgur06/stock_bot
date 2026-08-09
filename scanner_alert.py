@@ -1150,24 +1150,6 @@ if market is not None:
 else:
 
     print("시장 상태 : 분석 실패")
-
-# =========================
-# Telegram 시장환경 테스트
-# =========================
-
-if market is not None:
-
-    market_message = (
-        f"📊 KOSPI 시장환경 테스트\n\n"
-        f"시장 : {market['시장']}\n"
-        f"상태 : {market['상태']}\n"
-        f"시장 점수 : {market['점수']:+d}점\n"
-        f"현재가 : {market['현재가']:.2f}\n"
-        f"20일선 : {market['20일선']:.2f}\n"
-        f"5일 수익률 : {market['5일수익률']:+.2f}%"
-    )
-
-    send_telegram(market_message)
     
 
 results = []
