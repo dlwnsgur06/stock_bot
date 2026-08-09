@@ -232,12 +232,58 @@ def check_buy_message():
                 continue
 
             # 매수 정보 저장
-            holdings[stock_name] = {
 
-                "종목": stock_name,
-                "매수가": buy_price,
-                "수량": quantity
-            }
+            stop_rate = 7
+            target_rate = 14
+
+            stop_price = round(
+                buy_price * (1 - stop_rate / 100)
+            )
+
+            target_price = round(
+                buy_price * (1 + target_rate / 100)
+            )
+
+        stock_data = analyze_stock(
+            stock_name,
+            STOCKS[stock_name]
+        )
+
+        if stock_data is None:
+
+            send_telegram(
+                f"매수 등록 실패\n\n"
+                f"{stock_name} 종목 분석에 실패했습니다."
+            )
+
+            continue
+
+        stop_price = stock_data["손절가"]
+        target_price = stock_data["익절가"]
+        stop_rate = stock_data["손절률"]
+        target_rate = stock_data["익절률"]
+
+        holdings[stock_name] = {
+
+            "종목": stock_name,
+            "매수가": buy_price,
+            "수량": quantity,
+            "손절가": stop_price,
+            "익절가": target_price,
+            "손절률": stop_rate,
+            "익절률": target_rate
+        }
+
+        save_holdings(holdings)
+
+        send_telegram(
+            f"매수 등록 완료\n\n"
+            f"종목 : {stock_name}\n"
+            f"매수가 : {buy_price:,}원\n"
+            f"수량 : {quantity}주\n"
+            f"손절가 : {stop_price:,}원 (-{stop_rate}%)\n"
+            f"익절가 : {target_price:,}원 (+{target_rate}%)"
+        )
 
             save_holdings(holdings)
 
@@ -284,6 +330,90 @@ STOCKS = {
     "포스코퓨처엠": "003670.KS",
     "LS": "006260.KS",
 }
+
+# =========================
+# 보유종목 손절 / 익절 감시
+# =========================
+
+def check_sell_signal():
+
+    holdings = load_holdings()
+
+    if not holdings:
+        return
+
+    for stock_name, holding in holdings.items():
+
+        if stock_name not in STOCKS:
+            continue
+
+        try:
+
+            ticker = STOCKS[stock_name]
+
+            df = yf.download(
+                ticker,
+                period="5d",
+                interval="1d",
+                auto_adjust=False,
+                progress=False
+            )
+
+            if df.empty:
+                continue
+
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+
+            df = df.dropna()
+
+            if df.empty:
+                continue
+
+            current_price = float(
+                df["Close"].iloc[-1]
+            )
+
+            buy_price = holding["매수가"]
+            quantity = holding["수량"]
+            stop_price = holding["손절가"]
+            target_price = holding["익절가"]
+
+            if current_price <= stop_price:
+
+                send_telegram(
+                    f"손절 신호\n\n"
+                    f"종목 : {stock_name}\n"
+                    f"매수가 : {buy_price:,}원\n"
+                    f"현재가 : {current_price:,.0f}원\n"
+                    f"손절가 : {stop_price:,}원\n"
+                    f"수량 : {quantity}주"
+                )
+
+                print(
+                    f"{stock_name} 손절 신호"
+                )
+
+            elif current_price >= target_price:
+
+                send_telegram(
+                    f"익절 신호\n\n"
+                    f"종목 : {stock_name}\n"
+                    f"매수가 : {buy_price:,}원\n"
+                    f"현재가 : {current_price:,.0f}원\n"
+                    f"익절가 : {target_price:,}원\n"
+                    f"수량 : {quantity}주"
+                )
+
+                print(
+                    f"{stock_name} 익절 신호"
+                )
+
+        except Exception as e:
+
+            print(
+                f"{stock_name} 매도 감시 오류 : {e}"
+            )
 
 
 # =========================
@@ -1787,3 +1917,4 @@ print(" 스캔 완료")
 print("==============================")
 
 check_buy_message()
+check_sell_signal()
