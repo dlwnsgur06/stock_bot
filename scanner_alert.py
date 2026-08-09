@@ -276,6 +276,63 @@ def analyze_stock(name, ticker):
             macd < macd_signal
         )
 
+        # =========================
+        # 볼린저밴드
+        # =========================
+
+        bb_middle = (
+            df["Close"]
+            .rolling(20)
+            .mean()
+        )
+
+         bb_std = (
+            df["Close"]
+            .rolling(20)
+            .std()
+        )
+
+        bb_upper = (
+            bb_middle + (bb_std * 2)
+        )
+
+        bb_lower = (
+            bb_middle - (bb_std * 2)
+        )
+
+        bollinger_middle = float(
+            bb_middle.iloc[-1]
+        )
+
+        bollinger_upper = float(
+            bb_upper.iloc[-1]
+        )
+
+        bollinger_lower = float(
+            bb_lower.iloc[-1]
+        )
+
+
+        # =========================
+        # 볼린저밴드 위치
+        # =========================
+
+        if close >= bollinger_upper:
+
+            bollinger_position = "상단 돌파"
+
+        elif close <= bollinger_lower:
+
+            bollinger_position = "하단 근접"
+
+        elif close > bollinger_middle:
+
+            bollinger_position = "중간선 위"
+
+        else:
+
+            bollinger_position = "중간선 아래"
+
 
         # =========================
         # 골든크로스 / 데드크로스
@@ -446,6 +503,22 @@ def analyze_stock(name, ticker):
 
             score -= 10
 
+        # =========================
+        # 볼린저밴드 점수
+        # =========================
+
+        if close >= bollinger_upper:
+
+            score -= 5
+
+        elif close <= bollinger_lower:
+
+            score += 10
+
+        elif close > bollinger_middle:
+
+            score += 5
+
 
         # =========================
         # 변동성
@@ -564,6 +637,23 @@ def analyze_stock(name, ticker):
             ),
 
             "MACD상승": macd_bullish,
+
+            "볼린저상단": round(
+                bollinger_upper,
+                2
+            ),
+
+            "볼린저중간": round(
+                bollinger_middle,
+                2
+            ),
+
+            "볼린저하단": round(
+                bollinger_lower,
+                2
+            ),
+
+            "볼린저위치": bollinger_position,
 
             "RSI": round(
                 rsi,
@@ -807,6 +897,18 @@ else:
 
         f"MACD 상태 : "
         f"{'상승' if top['MACD상승'] else '하락'}\n\n"
+
+        f"볼린저 상단 : "
+        f"{top['볼린저상단']:,.2f}\n"
+
+        f"볼린저 중간 : "
+        f"{top['볼린저중간']:,.2f}\n"
+
+        f"볼린저 하단 : "
+        f"{top['볼린저하단']:,.2f}\n"
+
+        f"볼린저 위치 : "
+        f"{top['볼린저위치']}\n\n"
 
         f"RSI : {top['RSI']:.2f}\n"
 
