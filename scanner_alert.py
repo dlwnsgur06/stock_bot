@@ -769,7 +769,7 @@ def analyze_stock(name, ticker):
 
         if candle_signal == "강한 양봉":
 
-            core += 5
+            score += 5
 
         elif candle_signal == "강한 음봉":
 
@@ -1129,8 +1129,28 @@ if market is not None:
     print(
         f"시장 상태 : "
         f"{market['상태']} "
-        f"({market['점수']}점)"
+        f"({market['점수']:+d}점)"
     )
+
+    print(
+        f"KOSPI 현재가 : "
+        f"{market['현재가']}"
+    )
+
+    print(
+        f"KOSPI 20일선 : "
+        f"{market['20일선']}"
+    )
+
+    print(
+        f"KOSPI 5일 수익률 : "
+        f"{market['5일수익률']:+.2f}%"
+    )
+
+else:
+
+    print("시장 상태 : 분석 실패")
+    
 
 results = []
 
