@@ -236,6 +236,46 @@ def analyze_stock(name, ticker):
             ma20_series.iloc[-2]
         )
 
+        # =========================
+        # MACD
+        # =========================
+
+        ema12 = (
+            df["Close"]
+            .ewm(span=12, adjust=False)
+            .mean()
+        )
+
+        ema26 = (
+            df["Close"]
+            .ewm(span=26, adjust=False)
+            .mean()
+        )
+
+        macd_series = ema12 - ema26
+
+        signal_series = (
+            macd_series
+            .ewm(span=9, adjust=False)
+            .mean()
+        )
+
+        macd = float(
+            macd_series.iloc[-1]
+        )
+
+        macd_signal = float(
+            signal_series.iloc[-1]
+        )
+
+        macd_bullish = (
+            macd > macd_signal
+        )
+
+        macd_bearish = (
+            macd < macd_signal
+        )
+
 
         # =========================
         # 골든크로스 / 데드크로스
@@ -392,6 +432,19 @@ def analyze_stock(name, ticker):
         elif dead_cross:
 
             score -= 10
+            
+
+        # =========================
+        # MACD 점수
+        # =========================
+
+        if macd_bullish:
+
+            score += 10
+
+        elif macd_bearish:
+
+            score -= 10
 
 
         # =========================
@@ -502,6 +555,15 @@ def analyze_stock(name, ticker):
             "골든크로스": golden_cross,
 
             "데드크로스": dead_cross,
+
+            "MACD": round(macd, 4),
+
+            "MACD신호": round(
+                macd_signal,
+                4
+            ),
+
+            "MACD상승": macd_bullish,
 
             "RSI": round(
                 rsi,
@@ -736,6 +798,15 @@ else:
 
         f"데드크로스 : "
         f"{'발생' if top['데드크로스'] else '없음'}\n\n"
+
+        f"MACD : "
+        f"{top['MACD']:.4f}\n"
+
+        f"MACD 신호선 : "
+        f"{top['MACD신호']:.4f}\n"
+
+        f"MACD 상태 : "
+        f"{'상승' if top['MACD상승'] else '하락'}\n\n"
 
         f"RSI : {top['RSI']:.2f}\n"
 
