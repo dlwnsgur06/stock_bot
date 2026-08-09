@@ -264,7 +264,6 @@ def check_buy_message():
         target_rate = stock_data["익절률"]
 
         holdings[stock_name] = {
-
             "종목": stock_name,
             "매수가": buy_price,
             "수량": quantity,
@@ -284,16 +283,7 @@ def check_buy_message():
             f"손절가 : {stop_price:,}원 (-{stop_rate}%)\n"
             f"익절가 : {target_price:,}원 (+{target_rate}%)"
         )
-
-            save_holdings(holdings)
-
-            send_telegram(
-                f"✅ 매수 등록 완료\n\n"
-                f"종목 : {stock_name}\n"
-                f"매수가 : {buy_price:,}원\n"
-                f"수량 : {quantity}주"
-            )
-
+        
         # 처리한 마지막 update_id 저장
         if latest_update_id > last_update_id:
 
