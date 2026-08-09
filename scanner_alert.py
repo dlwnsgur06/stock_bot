@@ -53,9 +53,9 @@ def save_alert_history(history):
 # Telegram 설정
 # =========================
 
-
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
 TELEGRAM_CHAT_ID = CHAT_ID
 
 TELEGRAM_URL = (
@@ -170,7 +170,10 @@ def analyze_stock(name, ticker):
 
             return None
 
+
+        # =========================
         # MultiIndex 처리
+        # =========================
 
         if isinstance(df.columns, pd.MultiIndex):
 
@@ -200,18 +203,52 @@ def analyze_stock(name, ticker):
         # 이동평균
         # =========================
 
-        ma5 = (
+        ma5_series = (
             df["Close"]
             .rolling(5)
             .mean()
-            .iloc[-1]
         )
 
-        ma20 = (
+        ma20_series = (
             df["Close"]
             .rolling(20)
             .mean()
-            .iloc[-1]
+        )
+
+        ma5 = float(
+            ma5_series.iloc[-1]
+        )
+
+        ma20 = float(
+            ma20_series.iloc[-1]
+        )
+
+
+        # =========================
+        # 어제 이동평균
+        # =========================
+
+        ma5_yesterday = float(
+            ma5_series.iloc[-2]
+        )
+
+        ma20_yesterday = float(
+            ma20_series.iloc[-2]
+        )
+
+
+        # =========================
+        # 골든크로스 / 데드크로스
+        # =========================
+
+        golden_cross = (
+            ma5_yesterday <= ma20_yesterday
+            and ma5 > ma20
+        )
+
+        dead_cross = (
+            ma5_yesterday >= ma20_yesterday
+            and ma5 < ma20
         )
 
 
@@ -232,16 +269,22 @@ def analyze_stock(name, ticker):
         # 거래량
         # =========================
 
-        volume_ma20 = (
+        volume_ma20 = float(
             df["Volume"]
             .rolling(20)
             .mean()
             .iloc[-1]
         )
 
-        volume_ratio = (
-            volume / volume_ma20
-        )
+        if volume_ma20 <= 0:
+
+            volume_ratio = 0
+
+        else:
+
+            volume_ratio = (
+                volume / volume_ma20
+            )
 
 
         # =========================
@@ -277,14 +320,18 @@ def analyze_stock(name, ticker):
         score = 0
 
 
+        # =========================
         # 추세
+        # =========================
 
         if ma5 > ma20:
 
             score += 20
 
 
+        # =========================
         # 가격 위치
+        # =========================
 
         if close > ma5:
 
@@ -295,7 +342,9 @@ def analyze_stock(name, ticker):
             score += 15
 
 
+        # =========================
         # RSI
+        # =========================
 
         if 50 <= rsi <= 70:
 
@@ -306,14 +355,18 @@ def analyze_stock(name, ticker):
             score += 10
 
 
+        # =========================
         # 거래량
+        # =========================
 
         if volume_ratio > 1.0:
 
             score += 15
 
 
+        # =========================
         # 최근 5일 수익률
+        # =========================
 
         if return_5 > 5:
 
@@ -329,15 +382,32 @@ def analyze_stock(name, ticker):
 
 
         # =========================
+        # 골든크로스 / 데드크로스
+        # =========================
+
+        if golden_cross:
+
+            score += 10
+
+        elif dead_cross:
+
+            score -= 10
+
+
+        # =========================
         # 변동성
         # =========================
 
         recent_high = float(
-            df["High"].iloc[-20:].max()
+            df["High"]
+            .iloc[-20:]
+            .max()
         )
 
         recent_low = float(
-            df["Low"].iloc[-20:].min()
+            df["Low"]
+            .iloc[-20:]
+            .min()
         )
 
         volatility = (
@@ -418,6 +488,20 @@ def analyze_stock(name, ticker):
             "종목": name,
 
             "현재가": round(close),
+
+            "5일선": round(
+                ma5,
+                2
+            ),
+
+            "20일선": round(
+                ma20,
+                2
+            ),
+
+            "골든크로스": golden_cross,
+
+            "데드크로스": dead_cross,
 
             "RSI": round(
                 rsi,
@@ -566,6 +650,26 @@ else:
         )
 
         print(
+            f"    5일선 : "
+            f"{item['5일선']:,.2f}"
+        )
+
+        print(
+            f"    20일선 : "
+            f"{item['20일선']:,.2f}"
+        )
+
+        print(
+            f"    골든크로스 : "
+            f"{'발생' if item['골든크로스'] else '없음'}"
+        )
+
+        print(
+            f"    데드크로스 : "
+            f"{'발생' if item['데드크로스'] else '없음'}"
+        )
+
+        print(
             f"    5일 수익률 : "
             f"{item['5일수익률']:+.2f}%"
         )
@@ -619,14 +723,31 @@ else:
 
         f"종목 : {top['종목']}\n"
         f"점수 : {top['점수']}\n"
-        f"현재가 : {top['현재가']:,}원\n"
+        f"현재가 : {top['현재가']:,}원\n\n"
+
+        f"5일선 : "
+        f"{top['5일선']:,.2f}\n"
+
+        f"20일선 : "
+        f"{top['20일선']:,.2f}\n"
+
+        f"골든크로스 : "
+        f"{'발생' if top['골든크로스'] else '없음'}\n"
+
+        f"데드크로스 : "
+        f"{'발생' if top['데드크로스'] else '없음'}\n\n"
+
         f"RSI : {top['RSI']:.2f}\n"
+
         f"5일 수익률 : "
         f"{top['5일수익률']:+.2f}%\n"
+
         f"20일 수익률 : "
         f"{top['20일수익률']:+.2f}%\n"
+
         f"거래량 : "
         f"{top['거래량배수']:.2f}배\n"
+
         f"변동성 : "
         f"{top['변동성']:.2f}%\n\n"
 
@@ -652,72 +773,104 @@ else:
 
 
     # =========================
-    # Telegram 전송
-    # =========================
-
-    # =========================
     # 중복 알림 확인
     # =========================
 
     history = load_alert_history()
 
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now().strftime(
+        "%Y-%m-%d"
+    )
+
     stock_name = top["종목"]
 
-    today_key = f"{today}_{stock_name}"
-
-    # =========================
-    # 점수 변화 감지
-    # =========================
-
-    history = load_alert_history()
-
-    today = datetime.now().strftime("%Y-%m-%d")
-    stock_name = top["종목"]
-
-    today_key = f"{today}_{stock_name}"
+    today_key = (
+        f"{today}_{stock_name}"
+    )
 
     current_score = top["점수"]
 
 
+    # =========================
+    # 기존 알림 확인
+    # =========================
+
     if today_key in history:
 
-        previous_score = history[today_key]["점수"]
+        previous_score = (
+            history[today_key]["점수"]
+        )
+
+
+        # =========================
+        # 점수 상승 재알림
+        # =========================
 
         if current_score > previous_score:
 
             message = (
                 f"🚨 매수 신호 강화\n\n"
+
                 f"종목 : {stock_name}\n"
-                f"점수 : {previous_score} → {current_score}\n"
-                f"현재가 : {top['현재가']:,}원\n"
-                f"RSI : {top['RSI']:.2f}\n"
-                f"변동성 : {top['변동성']:.2f}%\n\n"
-                f"손절가 : {top['손절가']:,}원 "
+
+                f"점수 : "
+                f"{previous_score} → "
+                f"{current_score}\n"
+
+                f"현재가 : "
+                f"{top['현재가']:,}원\n\n"
+
+                f"골든크로스 : "
+                f"{'발생' if top['골든크로스'] else '없음'}\n"
+
+                f"데드크로스 : "
+                f"{'발생' if top['데드크로스'] else '없음'}\n\n"
+
+                f"RSI : "
+                f"{top['RSI']:.2f}\n"
+
+                f"변동성 : "
+                f"{top['변동성']:.2f}%\n\n"
+
+                f"손절가 : "
+                f"{top['손절가']:,}원 "
                 f"(-{top['손절률']}%)\n"
-                f"익절가 : {top['익절가']:,}원 "
+
+                f"익절가 : "
+                f"{top['익절가']:,}원 "
                 f"(+{top['익절률']}%)"
             )
 
+
             send_telegram(message)
 
-            history[today_key]["점수"] = current_score
+
+            history[today_key]["점수"] = (
+                current_score
+            )
 
             history[today_key]["시간"] = (
-                datetime.now().strftime("%H:%M:%S")
+                datetime.now().strftime(
+                    "%H:%M:%S"
+                )
             )
 
             save_alert_history(history)
 
+
             print()
+
             print(
                 f"점수 상승 재알림 : "
-                f"{previous_score} → {current_score}"
+                f"{previous_score} → "
+                f"{current_score}"
             )
+
 
         else:
 
             print()
+
             print(
                 f"이미 알림 완료 : "
                 f"{stock_name} "
@@ -726,25 +879,37 @@ else:
             )
 
 
+    # =========================
+    # 첫 알림
+    # =========================
+
     else:
 
         send_telegram(message)
 
+
         history[today_key] = {
+
             "종목": stock_name,
+
             "점수": current_score,
+
             "시간": datetime.now().strftime(
                 "%H:%M:%S"
             )
         }
 
+
         save_alert_history(history)
 
+
         print()
+
         print(
             f"새 알림 기록 완료 : "
             f"{stock_name}"
         )
+
 
 print()
 print("==============================")
