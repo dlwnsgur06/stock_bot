@@ -897,6 +897,15 @@ else:
                 f"데드크로스 : "
                 f"{'발생' if top['데드크로스'] else '없음'}\n\n"
 
+                f"MACD : "
+                f"{top['MACD']:.4f}\n"
+
+                f"MACD 신호선 : "
+                f"{top['MACD신호']:.4f}\n"
+
+                f"MACD 상태 : "
+                f"{'상승' if top['MACD상승'] else '하락'}\n\n"
+
                 f"RSI : "
                 f"{top['RSI']:.2f}\n"
 
