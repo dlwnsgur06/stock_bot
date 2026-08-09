@@ -309,6 +309,8 @@ def check_sell_signal():
     if not holdings:
         return
 
+    changed = False
+
     for stock_name, holding in holdings.items():
 
         if stock_name not in STOCKS:
@@ -346,6 +348,14 @@ def check_sell_signal():
             stop_price = holding["손절가"]
             target_price = holding["익절가"]
 
+            sell_signal_sent = holding.get(
+                "매도신호전송",
+                False
+            )
+
+            if sell_signal_sent:
+                continue
+
             if current_price <= stop_price:
 
                 send_telegram(
@@ -360,6 +370,9 @@ def check_sell_signal():
                 print(
                     f"{stock_name} 손절 신호"
                 )
+
+                holding["매도신호전송"] = True
+                changed = True
 
             elif current_price >= target_price:
 
@@ -376,12 +389,19 @@ def check_sell_signal():
                     f"{stock_name} 익절 신호"
                 )
 
+                holding["매도신호전송"] = True
+                changed = True
+
         except Exception as e:
 
             print(
                 f"{stock_name} 매도 감시 오류 : {e}"
             )
 
+    if changed:
+
+        save_holdings(holdings)
+        
 
 # =========================
 # 설정
