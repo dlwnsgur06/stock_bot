@@ -1461,7 +1461,6 @@ history = load_alert_history()
 
 today = datetime.now().strftime("%Y-%m-%d")
 
-
 for rank, item in enumerate(top_candidates, 1):
 
     stock_name = item["종목"]
