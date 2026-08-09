@@ -1170,6 +1170,16 @@ results.sort(
     reverse=True
 )
 
+print()
+print("===== 전체 종목 점수 =====")
+
+for item in results:
+
+    print(
+        item["종목"],
+        item["점수"]
+    )
+
 
 # =========================
 # 매수 후보
