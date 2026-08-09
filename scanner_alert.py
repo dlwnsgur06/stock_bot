@@ -65,6 +65,134 @@ TELEGRAM_URL = (
 
 
 # =========================
+# 보유종목 저장
+# =========================
+
+HOLDINGS_FILE = "holdings.json"
+
+
+def load_holdings():
+
+    if not os.path.exists(HOLDINGS_FILE):
+        return {}
+
+    try:
+
+        with open(
+            HOLDINGS_FILE,
+            "r",
+            encoding="utf-8"
+        ) as f:
+
+            return json.load(f)
+
+    except Exception:
+
+        return {}
+
+
+def save_holdings(holdings):
+
+    with open(
+        HOLDINGS_FILE,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        json.dump(
+            holdings,
+            f,
+            ensure_ascii=False,
+            indent=4
+        )
+
+# =========================
+# Telegram 매수 메시지 확인
+# =========================
+
+def check_buy_message():
+
+    url = (
+        f"https://api.telegram.org/bot"
+        f"{BOT_TOKEN}/getUpdates"
+    )
+
+    try:
+
+        response = requests.get(
+            url,
+            timeout=10
+        )
+
+        data = response.json()
+
+        if not data.get("ok"):
+            return
+
+        holdings = load_holdings()
+
+        for update in data.get("result", []):
+
+            message_data = update.get("message")
+
+            if not message_data:
+                continue
+
+            chat_id = str(
+                message_data["chat"]["id"]
+            )
+
+            if chat_id != str(TELEGRAM_CHAT_ID):
+                continue
+
+            text = message_data.get(
+                "text",
+                ""
+            ).strip()
+
+            if not text.startswith("매수 "):
+                continue
+
+            parts = text.split()
+
+            if len(parts) != 4:
+                continue
+
+            stock_name = parts[1]
+
+            try:
+
+                buy_price = int(parts[2])
+                quantity = int(parts[3])
+
+            except ValueError:
+
+                continue
+
+            holdings[stock_name] = {
+
+                "종목": stock_name,
+                "매수가": buy_price,
+                "수량": quantity
+            }
+
+            save_holdings(holdings)
+
+            send_telegram(
+                f"✅ 매수 등록 완료\n\n"
+                f"종목 : {stock_name}\n"
+                f"매수가 : {buy_price:,}원\n"
+                f"수량 : {quantity}주"
+            )
+
+    except Exception as e:
+
+        print(
+            f"매수 메시지 확인 오류 : {e}"
+        )
+
+
+# =========================
 # 종목 목록
 # =========================
 
@@ -1581,3 +1709,5 @@ print()
 print("==============================")
 print(" 스캔 완료")
 print("==============================")
+
+check_buy_message()
