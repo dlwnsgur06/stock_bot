@@ -281,80 +281,22 @@ def check_buy_message():
         )
         
 
-from pykrx import stock
-
 # =========================
-# 국내 전체 종목 목록
+# 종목 목록
 # =========================
 
-def get_all_stocks():
-
-    stocks = {}
-
-    today = datetime.now().strftime("%Y%m%d")
-
-    try:
-
-        kospi = stock.get_market_ticker_list(
-            today,
-            market="KOSPI"
-        )
-
-        kosdaq = stock.get_market_ticker_list(
-            today,
-            market="KOSDAQ"
-        )
-
-        all_tickers = kospi + kosdaq
-
-        for ticker in all_tickers:
-
-            name = stock.get_market_ticker_name(
-                ticker
-            )
-
-            if not name:
-                continue
-
-            if ticker in kospi:
-                market_code = ".KS"
-            else:
-                market_code = ".KQ"
-
-            stocks[name] = (
-                ticker + market_code
-            )
-
-        print()
-        print("==============================")
-        print(" 국내 전체 종목 목록")
-        print("==============================")
-
-        print(
-            f"KOSPI : {len(kospi)}개"
-        )
-
-        print(
-            f"KOSDAQ : {len(kosdaq)}개"
-        )
-
-        print(
-            f"전체 : {len(stocks)}개"
-        )
-
-        return stocks
-
-    except Exception as e:
-
-        print()
-        print(
-            f"전체 종목 목록 가져오기 오류 : {e}"
-        )
-
-        return {}
-
-
-STOCKS = get_all_stocks()
+STOCKS = {
+    "LG에너지솔루션": "373220.KS",
+    "신한지주": "055550.KS",
+    "삼성SDI": "006400.KS",
+    "POSCO홀딩스": "005490.KS",
+    "고려아연": "010130.KS",
+    "KT&G": "033780.KS",
+    "삼성에스디에스": "018260.KS",
+    "에이피알": "278470.KQ",
+    "포스코퓨처엠": "003670.KS",
+    "LS": "006260.KS"
+}
 
 
 # =========================
