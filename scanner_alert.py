@@ -804,6 +804,11 @@ def analyze_stock(name, ticker):
 
         if volatility >= 20:
 
+            print(
+                f"{name} 제외 : "
+                f"변동성 {volatility:.2f}%"
+            )
+
             return None
 
 
