@@ -1337,6 +1337,136 @@ print("==============================")
 print(" 알림 메시지")
 print("==============================")
 
+# =========================
+# 중복 알림 확인 + Telegram 전송
+# =========================
+
+history = load_alert_history()
+
+today = datetime.now().strftime("%Y-%m-%d")
+
+
+for rank, item in enumerate(top_candidates, 1):
+
+    stock_name = item["종목"]
+
+    today_key = f"{today}_{stock_name}"
+
+    current_score = item["점수"]
+
+    message = (
+        f"[매수 후보 {rank}/{len(top_candidates)}]\n"
+        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+
+        f"종목 : {stock_name}\n"
+        f"점수 : {current_score}\n"
+        f"시장 상태 : {item['시장상태']}\n"
+        f"시장 점수 : {market['점수']:+d}\n\n"
+
+        f"현재가 : {item['현재가']:,}원\n"
+        f"5일선 : {item['5일선']:,.2f}\n"
+        f"20일선 : {item['20일선']:,.2f}\n"
+        f"골든크로스 : {'발생' if item['골든크로스'] else '없음'}\n"
+        f"데드크로스 : {'발생' if item['데드크로스'] else '없음'}\n\n"
+
+        f"MACD : {item['MACD']:.4f}\n"
+        f"MACD 신호선 : {item['MACD신호']:.4f}\n"
+        f"MACD 상태 : {'상승' if item['MACD상승'] else '하락'}\n\n"
+
+        f"볼린저 상단 : {item['볼린저상단']:,.2f}\n"
+        f"볼린저 중간 : {item['볼린저중간']:,.2f}\n"
+        f"볼린저 하단 : {item['볼린저하단']:,.2f}\n"
+        f"볼린저 위치 : {item['볼린저위치']}\n\n"
+
+        f"지지선 : {item['지지선']:,.0f}원 "
+        f"(현재가 대비 -{item['지지선거리']:.2f}%)\n"
+
+        f"저항선 : {item['저항선']:,.0f}원 "
+        f"(현재가 대비 +{item['저항선거리']:.2f}%)\n\n"
+
+        f"이전 20일 고점 : {item['이전고점']:,.0f}원\n"
+        f"고점 돌파 : {'발생' if item['고점돌파'] else '없음'}\n"
+        f"캔들 신호 : {item['캔들신호']}\n\n"
+
+        f"RSI : {item['RSI']:.2f}\n"
+        f"스토캐스틱 K : {item['스토캐스틱K']:.2f}\n"
+        f"스토캐스틱 D : {item['스토캐스틱D']:.2f}\n"
+        f"스토캐스틱 상태 : {item['스토캐스틱상태']}\n\n"
+
+        f"ADX : {item['ADX']:.2f}\n"
+        f"ADX 상태 : {item['ADX상태']}\n\n"
+
+        f"5일 수익률 : {item['5일수익률']:+.2f}%\n"
+        f"20일 수익률 : {item['20일수익률']:+.2f}%\n"
+        f"거래량 : {item['거래량배수']:.2f}배\n"
+        f"변동성 : {item['변동성']:.2f}%\n\n"
+
+        f"손절가 : {item['손절가']:,}원 "
+        f"(-{item['손절률']}%)\n"
+
+        f"익절가 : {item['익절가']:,}원 "
+        f"(+{item['익절률']}%)\n\n"
+
+        f"신호 : {item['신호']}"
+    )
+
+    print()
+    print(message)
+
+    # =========================
+    # 중복 확인
+    # =========================
+
+    if today_key in history:
+
+        previous_score = history[today_key]["점수"]
+
+        if current_score > previous_score:
+
+            send_telegram(message)
+
+            history[today_key]["점수"] = current_score
+            history[today_key]["시간"] = datetime.now().strftime("%H:%M:%S")
+
+            save_alert_history(history)
+
+            print(
+                f"점수 상승 재알림 : "
+                f"{stock_name} "
+                f"{previous_score} → {current_score}"
+            )
+
+        else:
+
+            print(
+                f"이미 알림 완료 : "
+                f"{stock_name} "
+                f"(기존 {previous_score}점 / "
+                f"현재 {current_score}점)"
+            )
+
+    else:
+
+        send_telegram(message)
+
+        history[today_key] = {
+            "종목": stock_name,
+            "점수": current_score,
+            "시간": datetime.now().strftime("%H:%M:%S")
+        }
+
+        save_alert_history(history)
+
+        print(
+            f"새 알림 기록 완료 : {stock_name}"
+        )
+
+
+print()
+print("==============================")
+print(" 스캔 완료")
+print("==============================")
+
 for rank, item in enumerate(
     top_candidates,
     1
@@ -1452,29 +1582,6 @@ for rank, item in enumerate(
     print()
     print(message)
 
-
-# =========================
-# 중복 알림 확인 + Telegram 전송
-# =========================
-
-history = load_alert_history()
-
-today = datetime.now().strftime(
-    "%Y-%m-%d"
-)
-
-for rank, item in enumerate(
-    top_candidates,
-    1
-):
-
-    stock_name = item["종목"]
-
-    today_key = (
-        f"{today}_{stock_name}"
-    )
-
-    current_score = item["점수"]
 
 
     # =========================
