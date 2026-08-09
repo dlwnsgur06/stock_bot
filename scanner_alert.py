@@ -112,8 +112,6 @@ def save_holdings(holdings):
 
 def check_buy_message():
 
-    print("매수 메시지 확인 함수 실행")
-    
     url = (
         f"https://api.telegram.org/bot"
         f"{BOT_TOKEN}/getUpdates"
@@ -128,17 +126,54 @@ def check_buy_message():
 
         data = response.json()
 
-        print("Telegram 업데이트 확인:", data)
-
         if not data.get("ok"):
             return
 
         holdings = load_holdings()
-        
+
+        # 마지막으로 처리한 Telegram update_id
+        update_file = "telegram_update_id.txt"
+
+        if os.path.exists(update_file):
+
+            with open(
+                update_file,
+                "r",
+                encoding="utf-8"
+            ) as f:
+
+                last_update_id = int(
+                    f.read().strip()
+                )
+
+        else:
+
+            last_update_id = 0
+
+        latest_update_id = last_update_id
 
         for update in data.get("result", []):
 
-            message_data = update.get("message")
+            update_id = update.get(
+                "update_id"
+            )
+
+            if update_id is None:
+                continue
+
+            # 이미 처리한 메시지는 무시
+            if update_id <= last_update_id:
+                continue
+
+            # 가장 최신 update_id 기억
+            latest_update_id = max(
+                latest_update_id,
+                update_id
+            )
+
+            message_data = update.get(
+                "message"
+            )
 
             if not message_data:
                 continue
@@ -147,7 +182,10 @@ def check_buy_message():
                 message_data["chat"]["id"]
             )
 
-            if chat_id != str(TELEGRAM_CHAT_ID):
+            # 내 Telegram 채팅만 처리
+            if chat_id != str(
+                TELEGRAM_CHAT_ID
+            ):
                 continue
 
             text = message_data.get(
@@ -155,20 +193,25 @@ def check_buy_message():
                 ""
             ).strip()
 
+            # "매수 "로 시작하는 메시지만 처리
             if not text.startswith("매수 "):
                 continue
 
             parts = text.split()
 
+            # 형식:
+            # 매수 종목 가격 수량
             if len(parts) != 4:
                 continue
 
             stock_name = parts[1]
 
-            # 종목명 검증
+            # 존재하는 종목인지 확인
             if stock_name not in STOCKS:
-                print(
-                    f"잘못된 종목명 : {stock_name}"
+                send_telegram(
+                    f"❌ 매수 등록 실패\n\n"
+                    f"알 수 없는 종목 : {stock_name}\n"
+                    f"종목명을 정확하게 입력해주세요."
                 )
                 continue
 
@@ -179,8 +222,16 @@ def check_buy_message():
 
             except ValueError:
 
+                send_telegram(
+                    "❌ 매수 등록 실패\n\n"
+                    "가격과 수량은 숫자로 입력해주세요.\n\n"
+                    "예시 :\n"
+                    "매수 신한지주 110000 10"
+                )
+
                 continue
 
+            # 매수 정보 저장
             holdings[stock_name] = {
 
                 "종목": stock_name,
@@ -196,6 +247,19 @@ def check_buy_message():
                 f"매수가 : {buy_price:,}원\n"
                 f"수량 : {quantity}주"
             )
+
+        # 처리한 마지막 update_id 저장
+        if latest_update_id > last_update_id:
+
+            with open(
+                update_file,
+                "w",
+                encoding="utf-8"
+            ) as f:
+
+                f.write(
+                    str(latest_update_id)
+                )
 
     except Exception as e:
 
