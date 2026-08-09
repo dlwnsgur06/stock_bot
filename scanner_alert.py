@@ -163,6 +163,13 @@ def check_buy_message():
 
             stock_name = parts[1]
 
+            # 종목명 검증
+            if stock_name not in STOCKS:
+                print(
+                    f"잘못된 종목명 : {stock_name}"
+                )
+                continue
+
             try:
 
                 buy_price = int(parts[2])
