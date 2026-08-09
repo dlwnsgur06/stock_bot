@@ -1013,12 +1013,17 @@ def analyze_stock(name, ticker):
 
     except Exception as e:
 
+        print()
         print(
-            f"{name} 분석 오류 : {e}"
+            f"❌ {name} 분석 오류"
+        )
+
+        print(
+            f"오류 내용 : {e}"
         )
 
         return None
-
+        
 # =========================
 # 시장환경 분석
 # =========================
