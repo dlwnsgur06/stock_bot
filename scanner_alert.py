@@ -495,6 +495,72 @@ def analyze_stock(name, ticker):
             rsi_series.iloc[-1]
         )
 
+        # =========================
+        # ADX
+        # =========================
+
+        high = df["High"]
+        low = df["Low"]
+        close_series = df["Close"]
+
+        high_diff = high.diff()
+        low_diff = -low.diff()
+
+        plus_dm = high_diff.where(
+            (high_diff > low_diff) & (high_diff > 0),
+            0
+        )
+
+        minus_dm = low_diff.where(
+            (low_diff > high_diff) & (low_diff > 0),
+            0
+        )
+
+        previous_close = close_series.shift(1)
+
+        tr1 = high - low
+        tr2 = abs(high - previous_close)
+        tr3 = abs(low - previous_close)
+
+        true_range = pd.concat(
+            [tr1, tr2, tr3],
+            axis=1
+        ).max(axis=1)
+
+        atr = true_range.rolling(14).mean()
+
+        plus_di = (
+            100
+            * plus_dm.rolling(14).mean()
+            / atr
+        )
+
+        minus_di = (
+            100
+            * minus_dm.rolling(14).mean()
+            / atr
+        )
+
+        dx = (
+            100
+            * abs(plus_di - minus_di)
+            / (plus_di + minus_di)
+        )
+
+        adx_series = dx.rolling(14).mean()
+
+        adx = float(
+            adx_series.iloc[-1]
+        )
+
+        plus_di_current = float(
+            plus_di.iloc[-1]
+        )
+
+        minus_di_current = float(
+            minus_di.iloc[-1]
+        )
+
 
         # =========================
         # 거래량
@@ -594,6 +660,18 @@ def analyze_stock(name, ticker):
             score += 5
 
         elif stoch_k < stoch_d and stoch_k > 20:
+
+            score -= 5
+
+        # =========================
+        # ADX 점수
+        # =========================
+
+        if adx >= 25 and plus_di_current > minus_di_current:
+
+            score += 5
+
+        elif adx >= 25 and plus_di_current < minus_di_current:
 
             score -= 5
 
@@ -883,6 +961,17 @@ def analyze_stock(name, ticker):
                 else "하락"
             ),
 
+            "ADX": round(
+                adx,
+                2
+            ),
+
+            "ADX상태": (
+                "상승추세"
+                if plus_di_current > minus_di_current
+                else "하락추세"
+            ),
+
             "거래량배수": round(
                 volume_ratio,
                 2
@@ -1160,6 +1249,12 @@ else:
 
         f"스토캐스틱 상태 : "
         f"{top['스토캐스틱상태']}\n\n"
+
+        f"ADX : "
+        f"{top['ADX']:.2f}\n"
+
+        f"ADX 상태 : "
+        f"{top['ADX상태']}\n\n"
 
         f"5일 수익률 : "
         f"{top['5일수익률']:+.2f}%\n"
