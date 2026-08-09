@@ -153,8 +153,6 @@ def check_buy_message():
                 ""
             ).strip()
 
-            print("받은 매수 메시지:", text)
-
             if not text.startswith("매수 "):
                 continue
 
