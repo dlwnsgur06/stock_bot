@@ -1581,39 +1581,3 @@ print()
 print("==============================")
 print(" 스캔 완료")
 print("==============================")
-
-
-
-    # =========================
-    # 첫 알림
-    # =========================
-
-    else:
-
-        send_telegram(message)
-
-        history[today_key] = {
-
-            "종목": stock_name,
-
-            "점수": current_score,
-
-            "시간": datetime.now().strftime(
-                "%H:%M:%S"
-            )
-        }
-
-        save_alert_history(history)
-
-        print()
-
-        print(
-            f"새 알림 기록 완료 : "
-            f"{stock_name}"
-        )
-
-
-print()
-print("==============================")
-print(" 스캔 완료")
-print("==============================")
