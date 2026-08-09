@@ -112,6 +112,8 @@ def save_holdings(holdings):
 
 def check_buy_message():
 
+    print("매수 메시지 확인 함수 실행")
+    
     url = (
         f"https://api.telegram.org/bot"
         f"{BOT_TOKEN}/getUpdates"
