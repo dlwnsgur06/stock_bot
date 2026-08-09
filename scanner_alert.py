@@ -332,6 +332,37 @@ def analyze_stock(name, ticker):
         else:
 
             bollinger_position = "중간선 아래"
+            
+
+        # =========================
+        # 지지선 / 저항선
+        # =========================
+
+        support_level = float(
+            df["Low"]
+            .iloc[-20:]
+            .min()
+        )
+
+        resistance_level = float(
+            df["High"]
+            .iloc[-20:]
+            .max()
+        )
+
+        # =========================
+        # 지지선 / 저항선 거리
+        # =========================
+
+        support_distance = (
+            (close - support_level)
+            / close
+        ) * 100
+
+        resistance_distance = (
+            (resistance_level - close)
+            / close
+        ) * 100
 
 
         # =========================
@@ -519,6 +550,18 @@ def analyze_stock(name, ticker):
 
             score += 5
 
+        # =========================
+        # 지지선 / 저항선 점수
+        # =========================
+
+        if support_distance <= 5:
+
+            score += 5
+
+        if resistance_distance <= 3:
+
+            score -= 5
+
 
         # =========================
         # 변동성
@@ -654,6 +697,26 @@ def analyze_stock(name, ticker):
             ),
 
             "볼린저위치": bollinger_position,
+
+            "지지선": round(
+                support_level,
+                2
+             ),
+
+            "저항선": round(
+                resistance_level,
+                2
+            ),
+
+            "지지선거리": round(
+                support_distance,
+                2
+            ),
+
+            "저항선거리": round(
+                resistance_distance,
+                2
+            ),
 
             "RSI": round(
                 rsi,
@@ -909,6 +972,14 @@ else:
 
         f"볼린저 위치 : "
         f"{top['볼린저위치']}\n\n"
+
+        f"지지선 : "
+        f"{top['지지선']:,.0f}원 "
+        f"(현재가 대비 -{top['지지선거리']:.2f}%)\n"
+
+        f"저항선 : "
+        f"{top['저항선']:,.0f}원 "
+        f"(현재가 대비 +{top['저항선거리']:.2f}%)\n\n"
 
         f"RSI : {top['RSI']:.2f}\n"
 
