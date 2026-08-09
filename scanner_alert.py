@@ -1164,39 +1164,37 @@ else:
 
 results = []
 
-
 for name, ticker in STOCKS.items():
 
     print(
         f"{name} 확인 중..."
     )
 
-result = analyze_stock(
-    name,
-    ticker
-)
-
-if result is None:
-
-    print(
-        f"❌ {name} → 분석 결과 없음"
+    result = analyze_stock(
+        name,
+        ticker
     )
 
-else:
+    if result is None:
 
-    print(
-        f"✅ {name} → 분석 성공 / "
-        f"점수 {result['점수']}"
-    )
+        print(
+            f"❌ {name} → 분석 결과 없음"
+        )
 
-    if market is not None:
+    else:
 
-        result["점수"] += market["점수"]
+        print(
+            f"✅ {name} → 분석 성공 / "
+            f"점수 {result['점수']}"
+        )
 
-        result["시장상태"] = market["상태"]
+        if market is not None:
 
-    results.append(result)
+            result["점수"] += market["점수"]
 
+            result["시장상태"] = market["상태"]
+
+        results.append(result)
 
 print()
 print("데이터 다운로드 완료")
