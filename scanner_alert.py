@@ -1324,143 +1324,157 @@ else:
         )
 
 
-    # =========================
-    # Telegram 메시지
-    # =========================
+# =========================
+# Telegram 메시지
+# =========================
 
-    top = candidates[0]
+top_candidates = candidates[:5]
+
+total_candidates = len(top_candidates)
+
+print()
+print("==============================")
+print(" 알림 메시지")
+print("==============================")
+
+for rank, item in enumerate(
+    top_candidates,
+    1
+):
 
     now = datetime.now().strftime(
         "%Y-%m-%d %H:%M:%S"
     )
 
     message = (
-        f"[매수 후보 발생]\n"
+        f"[매수 후보 {rank}/{total_candidates}]\n"
         f"{now}\n\n"
 
-        f"종목 : {top['종목']}\n"
-        f"점수 : {top['점수']}\n"
-        f"시장 상태 : {top['시장상태']}\n"
+        f"종목 : {item['종목']}\n"
+        f"점수 : {item['점수']}\n"
+        f"시장 상태 : {item['시장상태']}\n"
         f"시장 점수 : {market['점수']:+d}\n\n"
-        f"현재가 : {top['현재가']:,}원\n\n"
+
+        f"현재가 : {item['현재가']:,}원\n\n"
 
         f"5일선 : "
-        f"{top['5일선']:,.2f}\n"
+        f"{item['5일선']:,.2f}\n"
 
         f"20일선 : "
-        f"{top['20일선']:,.2f}\n"
+        f"{item['20일선']:,.2f}\n"
 
         f"골든크로스 : "
-        f"{'발생' if top['골든크로스'] else '없음'}\n"
+        f"{'발생' if item['골든크로스'] else '없음'}\n"
 
         f"데드크로스 : "
-        f"{'발생' if top['데드크로스'] else '없음'}\n\n"
+        f"{'발생' if item['데드크로스'] else '없음'}\n\n"
 
         f"MACD : "
-        f"{top['MACD']:.4f}\n"
+        f"{item['MACD']:.4f}\n"
 
         f"MACD 신호선 : "
-        f"{top['MACD신호']:.4f}\n"
+        f"{item['MACD신호']:.4f}\n"
 
         f"MACD 상태 : "
-        f"{'상승' if top['MACD상승'] else '하락'}\n\n"
+        f"{'상승' if item['MACD상승'] else '하락'}\n\n"
 
         f"볼린저 상단 : "
-        f"{top['볼린저상단']:,.2f}\n"
+        f"{item['볼린저상단']:,.2f}\n"
 
         f"볼린저 중간 : "
-        f"{top['볼린저중간']:,.2f}\n"
+        f"{item['볼린저중간']:,.2f}\n"
 
         f"볼린저 하단 : "
-        f"{top['볼린저하단']:,.2f}\n"
+        f"{item['볼린저하단']:,.2f}\n"
 
         f"볼린저 위치 : "
-        f"{top['볼린저위치']}\n\n"
+        f"{item['볼린저위치']}\n\n"
 
         f"지지선 : "
-        f"{top['지지선']:,.0f}원 "
-        f"(현재가 대비 -{top['지지선거리']:.2f}%)\n"
+        f"{item['지지선']:,.0f}원 "
+        f"(현재가 대비 -{item['지지선거리']:.2f}%)\n"
 
         f"저항선 : "
-        f"{top['저항선']:,.0f}원 "
-        f"(현재가 대비 +{top['저항선거리']:.2f}%)\n\n"
+        f"{item['저항선']:,.0f}원 "
+        f"(현재가 대비 +{item['저항선거리']:.2f}%)\n\n"
 
         f"이전 20일 고점 : "
-        f"{top['이전고점']:,.0f}원\n"
+        f"{item['이전고점']:,.0f}원\n"
 
         f"고점 돌파 : "
-        f"{'발생' if top['고점돌파'] else '없음'}\n\n"
+        f"{'발생' if item['고점돌파'] else '없음'}\n\n"
 
         f"캔들 신호 : "
-        f"{top['캔들신호']}\n\n"
+        f"{item['캔들신호']}\n\n"
 
-        f"RSI : {top['RSI']:.2f}\n"
+        f"RSI : "
+        f"{item['RSI']:.2f}\n"
 
         f"스토캐스틱 K : "
-        f"{top['스토캐스틱K']:.2f}\n"
+        f"{item['스토캐스틱K']:.2f}\n"
 
         f"스토캐스틱 D : "
-        f"{top['스토캐스틱D']:.2f}\n"
+        f"{item['스토캐스틱D']:.2f}\n"
 
         f"스토캐스틱 상태 : "
-        f"{top['스토캐스틱상태']}\n\n"
+        f"{item['스토캐스틱상태']}\n\n"
 
         f"ADX : "
-        f"{top['ADX']:.2f}\n"
+        f"{item['ADX']:.2f}\n"
 
         f"ADX 상태 : "
-        f"{top['ADX상태']}\n\n"
+        f"{item['ADX상태']}\n\n"
 
         f"5일 수익률 : "
-        f"{top['5일수익률']:+.2f}%\n"
+        f"{item['5일수익률']:+.2f}%\n"
 
         f"20일 수익률 : "
-        f"{top['20일수익률']:+.2f}%\n"
+        f"{item['20일수익률']:+.2f}%\n"
 
         f"거래량 : "
-        f"{top['거래량배수']:.2f}배\n"
+        f"{item['거래량배수']:.2f}배\n"
 
         f"변동성 : "
-        f"{top['변동성']:.2f}%\n\n"
+        f"{item['변동성']:.2f}%\n\n"
 
         f"손절가 : "
-        f"{top['손절가']:,}원 "
-        f"(-{top['손절률']}%)\n"
+        f"{item['손절가']:,}원 "
+        f"(-{item['손절률']}%)\n"
 
         f"익절가 : "
-        f"{top['익절가']:,}원 "
-        f"(+{top['익절률']}%)\n\n"
+        f"{item['익절가']:,}원 "
+        f"(+{item['익절률']}%)\n\n"
 
-        f"신호 : {top['신호']}"
+        f"신호 : "
+        f"{item['신호']}"
     )
-
-
-    print()
-    print("==============================")
-    print(" 알림 메시지")
-    print("==============================")
 
     print()
     print(message)
 
 
-    # =========================
-    # 중복 알림 확인
-    # =========================
+# =========================
+# 중복 알림 확인 + Telegram 전송
+# =========================
 
-    history = load_alert_history()
+history = load_alert_history()
 
-    today = datetime.now().strftime(
-        "%Y-%m-%d"
-    )
+today = datetime.now().strftime(
+    "%Y-%m-%d"
+)
 
-    stock_name = top["종목"]
+for rank, item in enumerate(
+    top_candidates,
+    1
+):
+
+    stock_name = item["종목"]
 
     today_key = (
         f"{today}_{stock_name}"
     )
 
-    current_score = top["점수"]
+    current_score = item["점수"]
 
 
     # =========================
@@ -1484,47 +1498,52 @@ else:
                 f"🚨 매수 신호 강화\n\n"
 
                 f"종목 : {stock_name}\n"
-
                 f"점수 : "
                 f"{previous_score} → "
-                f"{current_score}\n"
+                f"{current_score}\n\n"
+
+                f"시장 상태 : "
+                f"{item['시장상태']}\n"
+                f"시장 점수 : "
+                f"{market['점수']:+d}\n\n"
 
                 f"현재가 : "
-                f"{top['현재가']:,}원\n\n"
+                f"{item['현재가']:,}원\n\n"
 
                 f"골든크로스 : "
-                f"{'발생' if top['골든크로스'] else '없음'}\n"
+                f"{'발생' if item['골든크로스'] else '없음'}\n"
 
                 f"데드크로스 : "
-                f"{'발생' if top['데드크로스'] else '없음'}\n\n"
+                f"{'발생' if item['데드크로스'] else '없음'}\n\n"
 
                 f"MACD : "
-                f"{top['MACD']:.4f}\n"
+                f"{item['MACD']:.4f}\n"
 
                 f"MACD 신호선 : "
-                f"{top['MACD신호']:.4f}\n"
+                f"{item['MACD신호']:.4f}\n"
 
                 f"MACD 상태 : "
-                f"{'상승' if top['MACD상승'] else '하락'}\n\n"
+                f"{'상승' if item['MACD상승'] else '하락'}\n\n"
 
                 f"RSI : "
-                f"{top['RSI']:.2f}\n"
+                f"{item['RSI']:.2f}\n"
+
+                f"5일 수익률 : "
+                f"{item['5일수익률']:+.2f}%\n"
 
                 f"변동성 : "
-                f"{top['변동성']:.2f}%\n\n"
+                f"{item['변동성']:.2f}%\n\n"
 
                 f"손절가 : "
-                f"{top['손절가']:,}원 "
-                f"(-{top['손절률']}%)\n"
+                f"{item['손절가']:,}원 "
+                f"(-{item['손절률']}%)\n"
 
                 f"익절가 : "
-                f"{top['익절가']:,}원 "
-                f"(+{top['익절률']}%)"
+                f"{item['익절가']:,}원 "
+                f"(+{item['익절률']}%)"
             )
 
-
             send_telegram(message)
-
 
             history[today_key]["점수"] = (
                 current_score
@@ -1538,15 +1557,14 @@ else:
 
             save_alert_history(history)
 
-
             print()
 
             print(
                 f"점수 상승 재알림 : "
+                f"{stock_name} "
                 f"{previous_score} → "
                 f"{current_score}"
             )
-
 
         else:
 
@@ -1568,7 +1586,6 @@ else:
 
         send_telegram(message)
 
-
         history[today_key] = {
 
             "종목": stock_name,
@@ -1580,9 +1597,7 @@ else:
             )
         }
 
-
         save_alert_history(history)
-
 
         print()
 
