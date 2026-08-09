@@ -447,6 +447,41 @@ def analyze_stock(name, ticker):
             and ma5 < ma20
         )
 
+        # =========================
+        # 스토캐스틱
+        # =========================
+
+        lowest_low = (
+            df["Low"]
+            .rolling(14)
+            .min()
+        )
+
+        highest_high = (
+            df["High"]
+            .rolling(14)
+            .max()
+        )
+
+        stochastic_k = (
+            (df["Close"] - lowest_low)
+            / (highest_high - lowest_low)
+        ) * 100
+
+        stochastic_d = (
+            stochastic_k
+            .rolling(3)
+            .mean()
+        )
+
+        stoch_k = float(
+            stochastic_k.iloc[-1]
+        )
+
+        stoch_d = float(
+            stochastic_d.iloc[-1]
+        )
+
 
         # =========================
         # RSI
@@ -549,6 +584,18 @@ def analyze_stock(name, ticker):
         elif 40 <= rsi < 50:
 
             score += 10
+
+        # =========================
+        # 스토캐스틱 점수
+        # =========================
+
+        if stoch_k > stoch_d and stoch_k < 80:
+
+            score += 5
+
+        elif stoch_k < stoch_d and stoch_k > 20:
+
+            score -= 5
 
 
         # =========================
@@ -820,6 +867,22 @@ def analyze_stock(name, ticker):
                 2
             ),
 
+            "스토캐스틱K": round(
+                stoch_k,
+                2
+            ),
+
+            "스토캐스틱D": round(
+                stoch_d,
+                2
+            ),
+
+            "스토캐스틱상태": (
+                "상승"
+                if stoch_k > stoch_d
+                else "하락"
+            ),
+
             "거래량배수": round(
                 volume_ratio,
                 2
@@ -1088,6 +1151,15 @@ else:
         f"{top['캔들신호']}\n\n"
 
         f"RSI : {top['RSI']:.2f}\n"
+
+        f"스토캐스틱 K : "
+        f"{top['스토캐스틱K']:.2f}\n"
+
+        f"스토캐스틱 D : "
+        f"{top['스토캐스틱D']:.2f}\n"
+
+        f"스토캐스틱 상태 : "
+        f"{top['스토캐스틱상태']}\n\n"
 
         f"5일 수익률 : "
         f"{top['5일수익률']:+.2f}%\n"
