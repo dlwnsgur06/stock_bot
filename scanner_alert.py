@@ -1932,49 +1932,49 @@ for name, ticker in STOCKS.items():
             f"✅ {name} → 분석 성공 / "
             f"점수 {result['점수']}"
         )
+
+        stock_market = STOCK_MARKETS.get(
+            name
+        )
+
+        if stock_market == "KOSPI":
+
+            market_info = market
+
+        elif stock_market == "KOSDAQ":
+
+            market_info = kosdaq
+
+        else:
+
+            market_info = None
+
+        if market_info is not None:
+
+            result["점수"] += (
+                market_info["점수"]
+            )
+
+            result["시장"] = stock_market
+
+            result["시장상태"] = (
+                market_info["상태"]
+            )
+
+            result["시장점수"] = (
+                market_info["점수"]
+            )
+
+        else:
+
+            result["시장"] = stock_market
+
+            result["시장상태"] = "분석 실패"
+
+            result["시장점수"] = 0
+
+        results.append(result)
         
-
-stock_market = STOCK_MARKETS.get(
-    name
-)
-
-if stock_market == "KOSPI":
-
-    market_info = market
-
-elif stock_market == "KOSDAQ":
-
-    market_info = kosdaq
-
-else:
-
-    market_info = None
-
-
-if market_info is not None:
-
-    result["점수"] += market_info["점수"]
-
-    result["시장"] = stock_market
-
-    result["시장상태"] = (
-        market_info["상태"]
-    )
-
-    result["시장점수"] = (
-        market_info["점수"]
-    )
-
-else:
-
-    result["시장"] = stock_market
-
-    result["시장상태"] = "분석 실패"
-
-    result["시장점수"] = 0
-
-
-results.append(result)
 
 print()
 print("데이터 다운로드 완료")
