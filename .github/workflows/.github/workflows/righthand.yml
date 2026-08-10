@@ -24,13 +24,23 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Check KRX key
+        env:
+          KRX_API_KEY: ${{ secrets.KRX_API_KEY }}
+        run: |
+          if [ -n "$KRX_API_KEY" ]; then
+            echo "KRX_API_KEY 전달됨"
+          else
+            echo "KRX_API_KEY 없음"
+            exit 1
+          fi
+
       - name: Run scanner
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           KRX_API_KEY: ${{ secrets.KRX_API_KEY }}
         run: python scanner_alert.py
-
       - name: Save alert history
         run: |
           git config user.name "Righthand Bot"
