@@ -1,0 +1,25 @@
+name: Test KRX Stock List
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install requests
+        run: pip install requests
+
+      - name: Run KRX stock list test
+        env:
+          KRX_API_KEY: ${{ secrets.KRX_API_KEY }}
+        run: python krx_stock_list.py
