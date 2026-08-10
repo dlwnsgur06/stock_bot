@@ -476,21 +476,31 @@ def check_sell_message():
 
 
 # =========================
-# 종목 목록
+# KRX 전체 종목 목록
 # =========================
 
-STOCKS = {
-    "LG에너지솔루션": "373220.KS",
-    "신한지주": "055550.KS",
-    "삼성SDI": "006400.KS",
-    "POSCO홀딩스": "005490.KS",
-    "고려아연": "010130.KS",
-    "KT&G": "033780.KS",
-    "삼성에스디에스": "018260.KS",
-    "에이피알": "278470.KQ",
-    "포스코퓨처엠": "003670.KS",
-    "LS": "006260.KS"
-}
+KRX_API_KEY = os.getenv("KRX_API_KEY")
+
+KOSPI_URL = (
+    "https://data-dbg.krx.co.kr/"
+    "svc/apis/sto/stk_isu_base_info"
+)
+
+KOSDAQ_URL = (
+    "https://data-dbg.krx.co.kr/"
+    "svc/apis/sto/ksq_isu_base_info"
+)
+
+# ... 내가 방금 준 load_krx_stocks() 함수 전체 ...
+
+STOCKS = load_krx_stocks()
+
+STOCKS = dict(list(STOCKS.items())[:30])
+
+print()
+print("==============================")
+print(f"KRX 전체 종목 : {len(STOCKS)}개")
+print("==============================")
 
 
 # =========================
