@@ -491,6 +491,8 @@ KOSDAQ_URL = (
     "svc/apis/sto/ksq_isu_base_info"
 )
 
+STOCK_MARKETS = {}
+
 
 def load_krx_stocks():
 
@@ -554,9 +556,14 @@ def load_krx_stocks():
                     )
 
                     if ticker and name:
+
+                        ticker = str(ticker)
+
                         stocks[name] = (
-                            str(ticker) + suffix
+                            ticker + suffix
                         )
+
+                        STOCK_MARKETS[name] = market
 
                 print(
                     f"{market} 종목 수 : "
@@ -585,7 +592,7 @@ def load_krx_stocks():
 
 STOCKS = load_krx_stocks()
 
-# 우선 30개만 분석 테스트
+# 우선 30개만 테스트
 STOCKS = dict(
     list(STOCKS.items())[:30]
 )
@@ -1925,14 +1932,49 @@ for name, ticker in STOCKS.items():
             f"✅ {name} → 분석 성공 / "
             f"점수 {result['점수']}"
         )
+        
 
-        if market is not None:
+stock_market = STOCK_MARKETS.get(
+    name
+)
 
-            result["점수"] += market["점수"]
+if stock_market == "KOSPI":
 
-            result["시장상태"] = market["상태"]
+    market_info = market
 
-        results.append(result)
+elif stock_market == "KOSDAQ":
+
+    market_info = kosdaq
+
+else:
+
+    market_info = None
+
+
+if market_info is not None:
+
+    result["점수"] += market_info["점수"]
+
+    result["시장"] = stock_market
+
+    result["시장상태"] = (
+        market_info["상태"]
+    )
+
+    result["시장점수"] = (
+        market_info["점수"]
+    )
+
+else:
+
+    result["시장"] = stock_market
+
+    result["시장상태"] = "분석 실패"
+
+    result["시장점수"] = 0
+
+
+results.append(result)
 
 print()
 print("데이터 다운로드 완료")
@@ -2097,8 +2139,9 @@ for rank, item in enumerate(top_candidates, 1):
 
         f"종목 : {stock_name}\n"
         f"점수 : {current_score}\n"
+        f"시장 : {item['시장']}\n"
         f"시장 상태 : {item['시장상태']}\n"
-        f"시장 점수 : {market['점수']:+d}\n\n"
+        f"시장 점수 : {item['시장점수']:+d}\n\n"
 
         f"현재가 : {item['현재가']:,}원\n"
         f"5일선 : {item['5일선']:,.2f}\n"
