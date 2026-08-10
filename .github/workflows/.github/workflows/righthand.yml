@@ -26,8 +26,9 @@ jobs:
 
       - name: Run scanner
         env:
-          ELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          KRX_API_KEY: ${{ secrets.KRX_API_KEY }}
         run: python scanner_alert.py
 
       - name: Save alert history
