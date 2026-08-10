@@ -602,43 +602,15 @@ def load_krx_stocks():
     return stocks
 
 
+# =========================
+# KRX 전체 종목
+# =========================
+
 STOCKS = load_krx_stocks()
-
-# =========================
-# KOSPI 15개 + KOSDAQ 15개 테스트
-# =========================
-
-kospi_stocks = {
-    name: ticker
-    for name, ticker in STOCKS.items()
-    if STOCK_MARKETS.get(name) == "KOSPI"
-}
-
-kosdaq_stocks = {
-    name: ticker
-    for name, ticker in STOCKS.items()
-    if STOCK_MARKETS.get(name) == "KOSDAQ"
-}
-
-STOCKS = dict(
-    list(kospi_stocks.items())[:15]
-    + list(kosdaq_stocks.items())[:15]
-)
 
 print()
 print("==============================")
-print(
-    f"KOSPI 테스트 : "
-    f"{len([name for name in STOCKS if STOCK_MARKETS.get(name) == 'KOSPI'])}개"
-)
-print(
-    f"KOSDAQ 테스트 : "
-    f"{len([name for name in STOCKS if STOCK_MARKETS.get(name) == 'KOSDAQ'])}개"
-)
-print(
-    f"총 테스트 종목 : "
-    f"{len(STOCKS)}개"
-)
+print(f"KOSPI + KOSDAQ 전체 종목 : {len(STOCKS)}개")
 print("==============================")
 
 
