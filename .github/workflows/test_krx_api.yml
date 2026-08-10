@@ -23,4 +23,3 @@ jobs:
         env:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
         run: python krx_api_test.py
-```
