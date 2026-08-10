@@ -279,6 +279,145 @@ def check_buy_message():
             f"매수 메시지 확인 오류 : {e}"
         )
 
+# =========================
+# Telegram 매도 완료 메시지 확인
+# =========================
+
+def check_sell_message():
+
+    url = (
+        f"https://api.telegram.org/bot"
+        f"{BOT_TOKEN}/getUpdates"
+    )
+
+    try:
+
+        response = requests.get(
+            url,
+            timeout=10
+        )
+
+        data = response.json()
+
+        if not data.get("ok"):
+            return
+
+        holdings = load_holdings()
+
+        update_file = "telegram_update_id.txt"
+
+        if os.path.exists(update_file):
+
+            with open(
+                update_file,
+                "r",
+                encoding="utf-8"
+            ) as f:
+
+                last_update_id = int(
+                    f.read().strip()
+                )
+
+        else:
+
+            last_update_id = 0
+
+        latest_update_id = last_update_id
+
+        for update in data.get("result", []):
+
+            update_id = update.get("update_id")
+
+            if update_id is None:
+                continue
+
+            if update_id <= last_update_id:
+                continue
+
+            latest_update_id = max(
+                latest_update_id,
+                update_id
+            )
+
+            message_data = update.get("message")
+
+            if not message_data:
+                continue
+
+            chat_id = str(
+                message_data["chat"]["id"]
+            )
+
+            if chat_id != str(
+                TELEGRAM_CHAT_ID
+            ):
+                continue
+
+            text = message_data.get(
+                "text",
+                ""
+            ).strip()
+
+            if not text.startswith("매도 "):
+                continue
+
+            parts = text.split()
+
+            if len(parts) != 2:
+                continue
+
+            stock_name = parts[1]
+
+            if stock_name not in holdings:
+
+                send_telegram(
+                    f"매도 처리 실패\n\n"
+                    f"{stock_name}은(는) "
+                    f"현재 보유종목에 없습니다."
+                )
+
+                continue
+
+            holding = holdings[stock_name]
+
+            buy_price = holding["매수가"]
+            quantity = holding["수량"]
+
+            del holdings[stock_name]
+
+            save_holdings(holdings)
+
+            send_telegram(
+                f"매도 처리 완료\n\n"
+                f"종목 : {stock_name}\n"
+                f"기존 매수가 : {buy_price:,}원\n"
+                f"수량 : {quantity}주\n\n"
+                f"보유종목에서 삭제되었습니다."
+            )
+
+            print(
+                f"매도 처리 완료 : "
+                f"{stock_name}"
+            )
+
+        if latest_update_id > last_update_id:
+
+            with open(
+                update_file,
+                "w",
+                encoding="utf-8"
+            ) as f:
+
+                f.write(
+                    str(latest_update_id)
+                )
+
+    except Exception as e:
+
+        print(
+            f"매도 메시지 확인 오류 : {e}"
+        )
+
 
 # =========================
 # 종목 목록
@@ -1904,4 +2043,5 @@ print(" 스캔 완료")
 print("==============================")
 
 check_buy_message()
+check_sell_message()
 check_sell_signal()
