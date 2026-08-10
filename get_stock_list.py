@@ -32,7 +32,7 @@ for market in ["KOSPI", "KOSDAQ"]:
 
         params = {
             "serviceKey": API_KEY,
-            "numOfRows": "1000",
+            "numOfRows": "100",
             "pageNo": str(page),
             "resultType": "json"
         }
