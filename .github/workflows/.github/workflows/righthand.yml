@@ -41,6 +41,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           KRX_API_KEY: ${{ secrets.KRX_API_KEY }}
         run: python scanner_alert.py
+        
       - name: Save alert history
         run: |
           git config user.name "Righthand Bot"
