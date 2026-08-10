@@ -4,6 +4,7 @@ import requests
 from datetime import datetime
 import json
 import os
+import time
 
 
 # =========================
@@ -786,24 +787,109 @@ def send_telegram(message):
             f"Telegram 오류 : {e}"
         )
 
+# =========================
+# 여러 종목 데이터 일괄 다운로드
+# =========================
+
+def download_stock_data(tickers, chunk_size=100):
+
+    stock_data = {}
+
+    ticker_list = list(tickers)
+
+    for i in range(0, len(ticker_list), chunk_size):
+
+        chunk = ticker_list[i:i + chunk_size]
+
+        print(
+            f"주가 데이터 다운로드 : "
+            f"{i + 1} ~ {min(i + chunk_size, len(ticker_list))} "
+            f"/ {len(ticker_list)}"
+        )
+
+        try:
+
+            data = yf.download(
+                chunk,
+                period="6mo",
+                interval="1d",
+                auto_adjust=False,
+                progress=False,
+                group_by="ticker",
+                threads=True
+            )
+
+            if data.empty:
+                continue
+
+            # 여러 종목 다운로드 결과
+            if isinstance(data.columns, pd.MultiIndex):
+
+                for ticker in chunk:
+
+                    try:
+
+                        if ticker not in data.columns.get_level_values(0):
+                            continue
+
+                        df = data[ticker].copy()
+
+                        df = df.dropna()
+
+                        if not df.empty:
+                            stock_data[ticker] = df
+
+                    except Exception as e:
+
+                        print(
+                            f"{ticker} 데이터 처리 실패 : {e}"
+                        )
+
+            else:
+
+                # 종목이 1개인 경우
+                if len(chunk) == 1:
+
+                    df = data.copy()
+
+                    df = df.dropna()
+
+                    if not df.empty:
+                        stock_data[chunk[0]] = df
+
+        except Exception as e:
+
+            print(
+                f"주가 데이터 다운로드 오류 : {e}"
+            )
+
+    print(
+        f"다운로드 완료 종목 : "
+        f"{len(stock_data)}개"
+    )
+
+    return stock_data
+
 
 # =========================
 # 종목 분석
 # =========================
 
-def analyze_stock(name, ticker):
+def analyze_stock(name, ticker, df=None):
 
     try:
 
-        df = yf.download(
-            ticker,
-            period="6mo",
-            interval="1d",
-            auto_adjust=False,
-            progress=False
-        )
+        if df is None:
 
-        if df.empty:
+            df = yf.download(
+                ticker,
+                period="6mo",
+                interval="1d",
+                auto_adjust=False,
+                progress=False
+            )
+
+        if df is None or df.empty:
 
             return None
 
@@ -1915,29 +2001,165 @@ else:
     print("KOSDAQ 상태 : 분석 실패")
     
 
-results = []
+# =========================
+# 전체 종목 일괄 데이터 수집
+# =========================
+
+stock_data = download_stock_data(
+    STOCKS
+)
+
+
+# =========================
+# 1차 빠른 필터
+# =========================
+
+quick_candidates = []
+
+kospi_candidates = []
+
+kosdaq_candidates = []
 
 for name, ticker in STOCKS.items():
+
+    df = stock_data.get(ticker)
+
+    if df is None or df.empty:
+        continue
+
+    quick_score = quick_filter_score(
+        df
+    )
+
+    if quick_score < 0:
+        continue
+
+    candidate = (
+        quick_score,
+        name,
+        ticker
+    )
+
+    quick_candidates.append(
+        candidate
+    )
+
+    stock_market = STOCK_MARKETS.get(
+        name
+    )
+
+    if stock_market == "KOSPI":
+
+        kospi_candidates.append(
+            candidate
+        )
+
+    elif stock_market == "KOSDAQ":
+
+        kosdaq_candidates.append(
+            candidate
+        )
+
+
+# 점수순 정렬
+
+kospi_candidates.sort(
+    key=lambda x: x[0],
+    reverse=True
+)
+
+kosdaq_candidates.sort(
+    key=lambda x: x[0],
+    reverse=True
+)
+
+
+# =========================
+# 시장별 상위 종목 선정
+# =========================
+
+kospi_candidates = [
+    item
+    for item in quick_candidates
+    if STOCK_MARKETS.get(item[1]) == "KOSPI"
+]
+
+kosdaq_candidates = [
+    item
+    for item in quick_candidates
+    if STOCK_MARKETS.get(item[1]) == "KOSDAQ"
+]
+
+
+kospi_candidates.sort(
+    key=lambda x: x[0],
+    reverse=True
+)
+
+kosdaq_candidates.sort(
+    key=lambda x: x[0],
+    reverse=True
+)
+
+
+# KOSPI 50 + KOSDAQ 50
+selected_candidates = (
+    kospi_candidates[:50]
+    + kosdaq_candidates[:50]
+)
+
+
+selected_candidates.sort(
+    key=lambda x: x[0],
+    reverse=True
+)
+
+
+print()
+print("==============================")
+print(
+    f"1차 필터 통과 : "
+    f"{len(quick_candidates)}개"
+)
+print(
+    f"정밀 분석 대상 : "
+    f"{len(selected_candidates)}개"
+)
+print("==============================")
+
+
+# =========================
+# 기존 정밀 분석
+# =========================
+
+results = []
+
+for quick_score, name, ticker in selected_candidates:
 
     print(
         f"{name} 확인 중..."
     )
 
+    df = stock_data.get(ticker)
+
     result = analyze_stock(
         name,
-        ticker
+        ticker,
+        df
     )
 
     if result is None:
 
         print(
-            f"❌ {name} → 분석 결과 없음"
+            f"❌ {name} → "
+            f"분석 결과 없음"
         )
 
     else:
 
         print(
-            f"✅ {name} → 분석 성공 / "
+            f"✅ {name} → "
+            f"분석 성공 / "
             f"점수 {result['점수']}"
         )
 
@@ -1982,10 +2204,10 @@ for name, ticker in STOCKS.items():
             result["시장점수"] = 0
 
         results.append(result)
-        
+
 
 print()
-print("데이터 다운로드 완료")
+print("데이터 다운로드 및 분석 완료")
 
 
 # =========================
