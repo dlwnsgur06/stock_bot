@@ -100,7 +100,6 @@ print(
 print("==============================")
 
 if not stocks:
-
     print("종목 목록 가져오기 실패")
     raise SystemExit(1)
 
