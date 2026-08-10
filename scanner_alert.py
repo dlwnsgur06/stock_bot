@@ -2098,6 +2098,6 @@ print("==============================")
 print(" 스캔 완료")
 print("==============================")
 
-check_buy_message()
+check_telegram_messages()
 check_sell_message()
 check_sell_signal()
