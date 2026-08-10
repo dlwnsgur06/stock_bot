@@ -531,9 +531,21 @@ def load_krx_stocks():
                     },
                     timeout=30
                 )
-
+                
                 if response.status_code != 200:
+
+                    print(
+                        f"{market} {date} "
+                        f"HTTP 상태 : {response.status_code}"
+                    )
+
+                    print(
+                        f"응답 내용 : "
+                        f"{response.text[:500]}"
+                    )
+
                     continue
+
 
                 data = response.json()
 
