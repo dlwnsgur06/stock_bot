@@ -106,10 +106,10 @@ def save_holdings(holdings):
         )
 
 # =========================
-# Telegram 매수 메시지 확인
+# Telegram 메시지 확인
 # =========================
 
-def check_buy_message():
+def check_telegram_messages():
 
     url = (
         f"https://api.telegram.org/bot"
@@ -184,82 +184,137 @@ def check_buy_message():
                 ""
             ).strip()
 
-            if not text.startswith("매수 "):
-                continue
+            # =========================
+            # 매수 명령
+            # =========================
 
-            parts = text.split()
+            if text.startswith("매수 "):
 
-            if len(parts) != 4:
-                continue
+                parts = text.split()
 
-            stock_name = parts[1]
+                if len(parts) != 4:
 
-            if stock_name not in STOCKS:
+                    send_telegram(
+                        "매수 등록 실패\n\n"
+                        "형식이 잘못되었습니다.\n\n"
+                        "예시 :\n"
+                        "매수 신한지주 110000 10"
+                    )
+
+                    continue
+
+                stock_name = parts[1]
+
+                if stock_name not in STOCKS:
+
+                    send_telegram(
+                        f"매수 등록 실패\n\n"
+                        f"알 수 없는 종목 : {stock_name}"
+                    )
+
+                    continue
+
+                try:
+
+                    buy_price = int(parts[2])
+                    quantity = int(parts[3])
+
+                except ValueError:
+
+                    send_telegram(
+                        "매수 등록 실패\n\n"
+                        "가격과 수량은 숫자로 입력해주세요."
+                    )
+
+                    continue
+
+                stock_data = analyze_stock(
+                    stock_name,
+                    STOCKS[stock_name]
+                )
+
+                if stock_data is None:
+
+                    send_telegram(
+                        f"매수 등록 실패\n\n"
+                        f"{stock_name} 분석 실패"
+                    )
+
+                    continue
+
+                stop_price = stock_data["손절가"]
+                target_price = stock_data["익절가"]
+
+                holdings[stock_name] = {
+
+                    "종목": stock_name,
+                    "매수가": buy_price,
+                    "수량": quantity,
+                    "손절가": stop_price,
+                    "익절가": target_price,
+                    "손절률": stock_data["손절률"],
+                    "익절률": stock_data["익절률"],
+                    "매도신호전송": False
+                }
+
+                save_holdings(holdings)
 
                 send_telegram(
-                    f"매수 등록 실패\n\n"
-                    f"알 수 없는 종목 : {stock_name}\n"
-                    f"종목명을 정확하게 입력해주세요."
+                    f"매수 등록 완료\n\n"
+                    f"종목 : {stock_name}\n"
+                    f"매수가 : {buy_price:,}원\n"
+                    f"수량 : {quantity}주\n"
+                    f"손절가 : {stop_price:,}원\n"
+                    f"익절가 : {target_price:,}원"
                 )
 
                 continue
 
-            try:
+            # =========================
+            # 매도 명령
+            # =========================
 
-                buy_price = int(parts[2])
-                quantity = int(parts[3])
+            if text.startswith("매도 "):
 
-            except ValueError:
+                parts = text.split()
+
+                if len(parts) != 2:
+
+                    send_telegram(
+                        "매도 실패\n\n"
+                        "예시 :\n"
+                        "매도 신한지주"
+                    )
+
+                    continue
+
+                stock_name = parts[1]
+
+                if stock_name not in holdings:
+
+                    send_telegram(
+                        f"매도 실패\n\n"
+                        f"{stock_name}은(는) "
+                        f"보유종목에 없습니다."
+                    )
+
+                    continue
+
+                del holdings[stock_name]
+
+                save_holdings(holdings)
 
                 send_telegram(
-                    "매수 등록 실패\n\n"
-                    "가격과 수량은 숫자로 입력해주세요.\n\n"
-                    "예시 :\n"
-                    "매수 신한지주 110000 10"
+                    f"매도 등록 완료\n\n"
+                    f"종목 : {stock_name}\n"
+                    f"보유종목에서 삭제했습니다."
                 )
 
                 continue
 
-            stock_data = analyze_stock(
-                stock_name,
-                STOCKS[stock_name]
-            )
-
-            if stock_data is None:
-
-                send_telegram(
-                    f"매수 등록 실패\n\n"
-                    f"{stock_name} 종목 분석에 실패했습니다."
-                )
-
-                continue
-
-            stop_price = stock_data["손절가"]
-            target_price = stock_data["익절가"]
-            stop_rate = stock_data["손절률"]
-            target_rate = stock_data["익절률"]
-
-            holdings[stock_name] = {
-
-                "종목": stock_name,
-                "매수가": buy_price,
-                "수량": quantity,
-                "손절가": stop_price,
-                "익절가": target_price,
-                "손절률": stop_rate,
-                "익절률": target_rate
-            }
-
-            save_holdings(holdings)
-
-            send_telegram(
-                f"매수 등록 완료\n\n"
-                f"종목 : {stock_name}\n"
-                f"매수가 : {buy_price:,}원\n"
-                f"수량 : {quantity}주\n"
-                f"손절가 : {stop_price:,}원 (-{stop_rate}%)\n"
-                f"익절가 : {target_price:,}원 (+{target_rate}%)"
-            )
+        # =========================
+        # update_id 저장
+        # =========================
 
         if latest_update_id > last_update_id:
 
@@ -276,8 +331,9 @@ def check_buy_message():
     except Exception as e:
 
         print(
-            f"매수 메시지 확인 오류 : {e}"
+            f"Telegram 메시지 확인 오류 : {e}"
         )
+
 
 # =========================
 # Telegram 매도 완료 메시지 확인
