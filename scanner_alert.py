@@ -2028,6 +2028,120 @@ stock_data = download_stock_data(
     STOCKS.values()
 )
 
+# =========================
+# 1차 빠른 필터 점수
+# =========================
+
+def quick_filter_score(df):
+
+    if df is None or df.empty:
+        return -999
+
+    try:
+
+        df = df.dropna(
+            subset=["Close", "Volume"]
+        ).copy()
+
+        if len(df) < 30:
+            return -999
+
+        close = df["Close"]
+        volume = df["Volume"]
+
+        current_price = float(
+            close.iloc[-1]
+        )
+
+        ma5 = float(
+            close.rolling(5).mean().iloc[-1]
+        )
+
+        ma20 = float(
+            close.rolling(20).mean().iloc[-1]
+        )
+
+        score = 0
+
+        # 현재가가 5일선 위
+        if current_price > ma5:
+            score += 20
+
+        # 5일선이 20일선 위
+        if ma5 > ma20:
+            score += 20
+
+        # 최근 5일 수익률
+        if len(close) >= 6:
+
+            return_5d = (
+                current_price
+                / float(close.iloc[-6])
+                - 1
+            ) * 100
+
+            if return_5d >= 2:
+                score += 15
+
+            elif return_5d >= 0:
+                score += 5
+
+        # 거래량 증가
+        if len(volume) >= 21:
+
+            avg_volume = float(
+                volume.iloc[-21:-1].mean()
+            )
+
+            current_volume = float(
+                volume.iloc[-1]
+            )
+
+            if avg_volume > 0:
+
+                volume_ratio = (
+                    current_volume
+                    / avg_volume
+                )
+
+                if volume_ratio >= 1.5:
+                    score += 20
+
+                elif volume_ratio >= 1.2:
+                    score += 10
+
+        # 현재가가 20일선 위
+        if current_price > ma20:
+            score += 15
+
+        # 변동성 계산
+        returns = close.pct_change().dropna()
+
+        if len(returns) >= 20:
+
+            volatility = (
+                returns.tail(20).std()
+                * (252 ** 0.5)
+                * 100
+            )
+
+            # 변동성이 너무 높으면 감점
+            if volatility > 30:
+                score -= 20
+
+            elif volatility > 25:
+                score -= 10
+
+        return int(score)
+
+    except Exception as e:
+
+        print(
+            f"빠른 필터 계산 실패 : {e}"
+        )
+
+        return -999
+
 
 # =========================
 # 1차 빠른 필터
