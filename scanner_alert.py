@@ -491,15 +491,111 @@ KOSDAQ_URL = (
     "svc/apis/sto/ksq_isu_base_info"
 )
 
-# ... 내가 방금 준 load_krx_stocks() 함수 전체 ...
+
+def load_krx_stocks():
+
+    if not KRX_API_KEY:
+        print("KRX_API_KEY가 없습니다.")
+        return {}
+
+    stocks = {}
+
+    today = datetime.now()
+
+    api_list = [
+        ("KOSPI", KOSPI_URL, ".KS"),
+        ("KOSDAQ", KOSDAQ_URL, ".KQ")
+    ]
+
+    for market, url, suffix in api_list:
+
+        success = False
+
+        for i in range(10):
+
+            date = (
+                today - pd.Timedelta(days=i)
+            ).strftime("%Y%m%d")
+
+            try:
+
+                response = requests.get(
+                    url,
+                    headers={
+                        "AUTH_KEY": KRX_API_KEY
+                    },
+                    params={
+                        "basDd": date
+                    },
+                    timeout=30
+                )
+
+                if response.status_code != 200:
+                    continue
+
+                data = response.json()
+
+                rows = data.get(
+                    "OutBlock_1",
+                    []
+                )
+
+                if not rows:
+                    continue
+
+                for row in rows:
+
+                    ticker = row.get(
+                        "ISU_SRT_CD"
+                    )
+
+                    name = row.get(
+                        "ISU_ABBRV"
+                    )
+
+                    if ticker and name:
+                        stocks[name] = (
+                            str(ticker) + suffix
+                        )
+
+                print(
+                    f"{market} 종목 수 : "
+                    f"{len(rows)}개"
+                )
+
+                success = True
+                break
+
+            except Exception as e:
+
+                print(
+                    f"{market} 조회 오류 : "
+                    f"{e}"
+                )
+
+        if not success:
+
+            print(
+                f"{market} 종목 목록 "
+                "가져오기 실패"
+            )
+
+    return stocks
+
 
 STOCKS = load_krx_stocks()
 
-STOCKS = dict(list(STOCKS.items())[:30])
+# 우선 30개만 분석 테스트
+STOCKS = dict(
+    list(STOCKS.items())[:30]
+)
 
 print()
 print("==============================")
-print(f"KRX 전체 종목 : {len(STOCKS)}개")
+print(
+    f"KRX 전체 종목 : "
+    f"{len(STOCKS)}개"
+)
 print("==============================")
 
 
