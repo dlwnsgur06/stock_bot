@@ -810,7 +810,7 @@ def send_telegram(message):
 # 여러 종목 데이터 일괄 다운로드
 # =========================
 
-def download_stock_data(tickers, chunk_size=100):
+def download_stock_data(tickers, chunk_size=30):
 
     stock_data = {}
 
@@ -835,7 +835,7 @@ def download_stock_data(tickers, chunk_size=100):
                 auto_adjust=False,
                 progress=False,
                 group_by="ticker",
-                threads=True
+                threads=False
             )
 
             if data.empty:
