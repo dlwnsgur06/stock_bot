@@ -2025,7 +2025,7 @@ else:
 # =========================
 
 stock_data = download_stock_data(
-    STOCKS
+    STOCKS.values()
 )
 
 
