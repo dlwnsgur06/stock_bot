@@ -1245,7 +1245,8 @@ def analyze_stock(name, ticker, df=None):
         )
 
         # =========================
-        # ADX
+        # ADX - Wilder 방식
+        # 기간 14 / 스무딩 14
         # =========================
 
         high = df["High"]
@@ -1268,35 +1269,53 @@ def analyze_stock(name, ticker, df=None):
         previous_close = close_series.shift(1)
 
         tr1 = high - low
-        tr2 = abs(high - previous_close)
-        tr3 = abs(low - previous_close)
+        tr2 = (high - previous_close).abs()
+        tr3 = (low - previous_close).abs()
 
         true_range = pd.concat(
             [tr1, tr2, tr3],
             axis=1
         ).max(axis=1)
 
-        atr = true_range.rolling(14).mean()
+        # Wilder 방식
+        atr = true_range.ewm(
+            alpha=1 / 14,
+            adjust=False
+        ).mean()
+
+        plus_dm_smoothed = plus_dm.ewm(
+            alpha=1 / 14,
+            adjust=False
+        ).mean()
+
+        minus_dm_smoothed = minus_dm.ewm(
+            alpha=1 / 14,
+            adjust=False
+        ).mean()
 
         plus_di = (
             100
-            * plus_dm.rolling(14).mean()
+            * plus_dm_smoothed
             / atr
         )
 
         minus_di = (
             100
-            * minus_dm.rolling(14).mean()
+            * minus_dm_smoothed
             / atr
         )
 
         dx = (
             100
-            * abs(plus_di - minus_di)
+            * (plus_di - minus_di).abs()
             / (plus_di + minus_di)
         )
 
-        adx_series = dx.rolling(14).mean()
+        # ADX 스무딩 14
+        adx_series = dx.ewm(
+            alpha=1 / 14,
+            adjust=False
+        ).mean()
 
         adx = float(
             adx_series.iloc[-1]
