@@ -2027,6 +2027,80 @@ else:
 stock_data = download_stock_data(
     STOCKS.values()
 )
+    
+
+# =========================
+# 거래대금 TOP 100 추출
+# =========================
+
+def get_top_trading_value_stocks(stock_data, top_n=100):
+
+    trading_value_list = []
+
+    for name, ticker in STOCKS.items():
+
+        df = stock_data.get(ticker)
+
+        if df is None or df.empty:
+            continue
+
+        try:
+
+            close = float(df["Close"].iloc[-1])
+            volume = float(df["Volume"].iloc[-1])
+
+            if close <= 0 or volume <= 0:
+                continue
+
+            # 최근 거래일 거래대금
+            trading_value = close * volume
+
+            trading_value_list.append(
+                (
+                    trading_value,
+                    name,
+                    ticker
+                )
+            )
+
+        except Exception:
+            continue
+
+    # 거래대금 높은 순으로 정렬
+    trading_value_list.sort(
+        key=lambda x: x[0],
+        reverse=True
+    )
+
+    return trading_value_list[:top_n]
+
+
+# =========================
+# 거래대금 TOP 100 가져오기
+# =========================
+
+top_trading_value_stocks = get_top_trading_value_stocks(
+    stock_data,
+    100
+)
+
+print()
+print("==============================")
+print(" 거래대금 TOP 20")
+print("==============================")
+
+for rank, (value, name, ticker) in enumerate(
+    top_trading_value_stocks[:20],
+    start=1
+):
+
+    print(
+        f"{rank}위 | {name} | "
+        f"거래대금 약 {value / 100000000:.1f}억원"
+    )
+
+print("==============================")
+
 
 # =========================
 # 1차 빠른 필터 점수
@@ -2034,6 +2108,7 @@ stock_data = download_stock_data(
 
 def quick_filter_score(df):
 
+    # 기존에 있던 코드 그대로 유지
     if df is None or df.empty:
         return -999
 
