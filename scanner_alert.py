@@ -747,7 +747,7 @@ MIN_SCORE = 70
 
 
 # =========================
-# RSI 계산
+# RSI 계산 - Wilder 방식
 # =========================
 
 def calculate_rsi(series, period=14):
@@ -757,17 +757,14 @@ def calculate_rsi(series, period=14):
     gain = delta.clip(lower=0)
     loss = -delta.clip(upper=0)
 
-    # Wilder 방식 RMA
     avg_gain = gain.ewm(
         alpha=1 / period,
-        adjust=False,
-        min_periods=period
+        adjust=False
     ).mean()
 
     avg_loss = loss.ewm(
         alpha=1 / period,
-        adjust=False,
-        min_periods=period
+        adjust=False
     ).mean()
 
     rs = avg_gain / avg_loss
