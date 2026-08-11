@@ -2103,237 +2103,162 @@ print("==============================")
 
 
 # =========================
-# 1차 빠른 필터 점수
+# 거래대금 TOP 100을 정밀 분석 대상으로 사용
 # =========================
 
-def quick_filter_score(df):
+selected_candidates = []
 
-    # 기존에 있던 코드 그대로 유지
-    if df is None or df.empty:
-        return -999
+for rank, (trading_value, name, ticker) in enumerate(
+    top_trading_value_stocks,
+    start=1
+):
 
-    try:
-
-        df = df.dropna(
-            subset=["Close", "Volume"]
-        ).copy()
-
-        if len(df) < 30:
-            return -999
-
-        close = df["Close"]
-        volume = df["Volume"]
-
-        current_price = float(
-            close.iloc[-1]
+    selected_candidates.append(
+        (
+            trading_value,
+            name,
+            ticker
         )
-
-        ma5 = float(
-            close.rolling(5).mean().iloc[-1]
-        )
-
-        ma20 = float(
-            close.rolling(20).mean().iloc[-1]
-        )
-
-        score = 0
-
-        # 현재가가 5일선 위
-        if current_price > ma5:
-            score += 20
-
-        # 5일선이 20일선 위
-        if ma5 > ma20:
-            score += 20
-
-        # 최근 5일 수익률
-        if len(close) >= 6:
-
-            return_5d = (
-                current_price
-                / float(close.iloc[-6])
-                - 1
-            ) * 100
-
-            if return_5d >= 2:
-                score += 15
-
-            elif return_5d >= 0:
-                score += 5
-
-        # 거래량 증가
-        if len(volume) >= 21:
-
-            avg_volume = float(
-                volume.iloc[-21:-1].mean()
-            )
-
-            current_volume = float(
-                volume.iloc[-1]
-            )
-
-            if avg_volume > 0:
-
-                volume_ratio = (
-                    current_volume
-                    / avg_volume
-                )
-
-                if volume_ratio >= 1.5:
-                    score += 20
-
-                elif volume_ratio >= 1.2:
-                    score += 10
-
-        # 현재가가 20일선 위
-        if current_price > ma20:
-            score += 15
-
-        # 변동성 계산
-        returns = close.pct_change().dropna()
-
-        if len(returns) >= 20:
-
-            volatility = (
-                returns.tail(20).std()
-                * (252 ** 0.5)
-                * 100
-            )
-
-            # 변동성이 너무 높으면 감점
-            if volatility > 30:
-                score -= 20
-
-            elif volatility > 25:
-                score -= 10
-
-        return int(score)
-
-    except Exception as e:
-
-        print(
-            f"빠른 필터 계산 실패 : {e}"
-        )
-
-        return -999
-
-
-# =========================
-# 1차 빠른 필터
-# =========================
-
-quick_candidates = []
-
-kospi_candidates = []
-
-kosdaq_candidates = []
-
-for name, ticker in STOCKS.items():
-
-    df = stock_data.get(ticker)
-
-    if df is None or df.empty:
-        continue
-
-    quick_score = quick_filter_score(
-        df
     )
-
-    if quick_score < 0:
-        continue
-
-    candidate = (
-        quick_score,
-        name,
-        ticker
-    )
-
-    quick_candidates.append(
-        candidate
-    )
-
-    stock_market = STOCK_MARKETS.get(
-        name
-    )
-
-    if stock_market == "KOSPI":
-
-        kospi_candidates.append(
-            candidate
-        )
-
-    elif stock_market == "KOSDAQ":
-
-        kosdaq_candidates.append(
-            candidate
-        )
-
-
-# 점수순 정렬
-
-kospi_candidates.sort(
-    key=lambda x: x[0],
-    reverse=True
-)
-
-kosdaq_candidates.sort(
-    key=lambda x: x[0],
-    reverse=True
-)
-
-
-# =========================
-# 시장별 상위 종목 선정
-# =========================
-
-kospi_candidates = [
-    item
-    for item in quick_candidates
-    if STOCK_MARKETS.get(item[1]) == "KOSPI"
-]
-
-kosdaq_candidates = [
-    item
-    for item in quick_candidates
-    if STOCK_MARKETS.get(item[1]) == "KOSDAQ"
-]
-
-
-kospi_candidates.sort(
-    key=lambda x: x[0],
-    reverse=True
-)
-
-kosdaq_candidates.sort(
-    key=lambda x: x[0],
-    reverse=True
-)
-
-
-# KOSPI 50 + KOSDAQ 50
-selected_candidates = (
-    kospi_candidates[:50]
-    + kosdaq_candidates[:50]
-)
-
-
-selected_candidates.sort(
-    key=lambda x: x[0],
-    reverse=True
-)
 
 
 print()
 print("==============================")
 print(
-    f"1차 필터 통과 : "
-    f"{len(quick_candidates)}개"
+    f"거래대금 TOP 100 정밀 분석"
 )
 print(
     f"정밀 분석 대상 : "
     f"{len(selected_candidates)}개"
 )
 print("==============================")
+
+
+# =========================
+# 거래대금 TOP 100 정밀 분석
+# =========================
+
+results = []
+
+for trading_value, name, ticker in selected_candidates:
+
+    print(
+        f"{name} 확인 중..."
+    )
+
+    df = stock_data.get(ticker)
+
+    result = analyze_stock(
+        name,
+        ticker,
+        df
+    )
+
+    if result is None:
+
+        print(
+            f"❌ {name} → "
+            f"분석 결과 없음"
+        )
+
+    else:
+
+        print(
+            f"✅ {name} → "
+            f"분석 성공 / "
+            f"점수 {result['점수']}"
+        )
+
+        # =========================
+        # 시장 점수 반영
+        # =========================
+
+        stock_market = STOCK_MARKETS.get(
+            name
+        )
+
+        if stock_market == "KOSPI":
+
+            market_info = market
+
+        elif stock_market == "KOSDAQ":
+
+            market_info = kosdaq
+
+        else:
+
+            market_info = None
+
+
+        if market_info is not None:
+
+            result["점수"] += (
+                market_info["점수"]
+            )
+
+            result["시장"] = stock_market
+
+            result["시장상태"] = (
+                market_info["상태"]
+            )
+
+            result["시장점수"] = (
+                market_info["점수"]
+            )
+
+        else:
+
+            result["시장"] = stock_market
+
+            result["시장상태"] = "분석 실패"
+
+            result["시장점수"] = 0
+
+
+        # =========================
+        # 거래대금 정보 저장
+        # =========================
+
+        result["거래대금"] = (
+            trading_value
+        )
+
+        result["거래대금순위"] = (
+            len(results) + 1
+        )
+
+        results.append(
+            result
+        )
+
+
+print()
+print("데이터 다운로드 및 분석 완료")
+
+
+# =========================
+# 최종 점수순 정렬
+# =========================
+
+results.sort(
+    key=lambda x: x["점수"],
+    reverse=True
+)
+
+print()
+print("==============================")
+print(" 거래대금 TOP 100 분석 결과")
+print("==============================")
+
+for item in results:
+
+    print(
+        f"{item['종목']} | "
+        f"점수 {item['점수']} | "
+        f"거래대금 "
+        f"{item['거래대금'] / 100000000:.1f}억원"
+    )
+
 
 
 # =========================
