@@ -2762,6 +2762,9 @@ for rank, item in enumerate(top_candidates, 1):
         f"시장 상태 : {item['시장상태']}\n"
         f"시장 점수 : {item['시장점수']:+d}\n\n"
 
+        f"미국시장 상태 : {item['미국시장상태']}\n"
+        f"미국시장 점수 : {item['미국시장점수']:+d}\n\n"
+
         f"현재가 : {item['현재가']:,}원\n"
         f"5일선 : {item['5일선']:,.2f}\n"
         f"20일선 : {item['20일선']:,.2f}\n"
