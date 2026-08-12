@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 import json
 import os
 import time
-r
+
 
 # =========================
 # 중복 알림 방지
