@@ -2008,62 +2008,192 @@ def analyze_us_market():
         if len(sp500) < 30 or len(nasdaq) < 30:
             return None
 
-        sp500_close = sp500["Close"]
-        nasdaq_close = nasdaq["Close"]
-
         # =========================
         # S&P 500
         # =========================
+
+        sp500_close = sp500["Close"]
+
+        sp500_ma20 = (
+            sp500_close
+            .rolling(20)
+            .mean()
+            .iloc[-1]
+        )
 
         sp500_current = float(
             sp500_close.iloc[-1]
         )
 
         sp500_previous = float(
-            sp500_close.iloc[-2]
+            sp500_close.iloc[-6]
         )
 
-        sp500_return = (
+        sp500_return_5 = (
             sp500_current / sp500_previous - 1
         ) * 100
+
+        sp500_score = 0
+
+        if sp500_current > sp500_ma20:
+
+            sp500_score += 5
+
+        if sp500_return_5 > 2:
+
+            sp500_score += 5
+
+        elif sp500_return_5 < -2:
+
+            sp500_score -= 5
+
+        if sp500_score >= 10:
+
+            sp500_status = "강한 상승장"
+
+        elif sp500_score >= 5:
+
+            sp500_status = "상승장"
+
+        elif sp500_score <= -5:
+
+            sp500_status = "약세장"
+
+        else:
+
+            sp500_status = "중립"
+
 
         # =========================
         # NASDAQ
         # =========================
+
+        nasdaq_close = nasdaq["Close"]
+
+        nasdaq_ma20 = (
+            nasdaq_close
+            .rolling(20)
+            .mean()
+            .iloc[-1]
+        )
 
         nasdaq_current = float(
             nasdaq_close.iloc[-1]
         )
 
         nasdaq_previous = float(
-            nasdaq_close.iloc[-2]
+            nasdaq_close.iloc[-6]
         )
 
-        nasdaq_return = (
+        nasdaq_return_5 = (
             nasdaq_current / nasdaq_previous - 1
         ) * 100
 
+        nasdaq_score = 0
+
+        if nasdaq_current > nasdaq_ma20:
+
+            nasdaq_score += 5
+
+        if nasdaq_return_5 > 2:
+
+            nasdaq_score += 5
+
+        elif nasdaq_return_5 < -2:
+
+            nasdaq_score -= 5
+
+        if nasdaq_score >= 10:
+
+            nasdaq_status = "강한 상승장"
+
+        elif nasdaq_score >= 5:
+
+            nasdaq_status = "상승장"
+
+        elif nasdaq_score <= -5:
+
+            nasdaq_status = "약세장"
+
+        else:
+
+            nasdaq_status = "중립"
+
+
+        # =========================
+        # 미국 시장 종합 점수
+        # =========================
+
+        us_total_score = (
+            sp500_score
+            + nasdaq_score
+        )
+
+        if us_total_score >= 15:
+
+            us_status = "강한 상승장"
+
+        elif us_total_score >= 5:
+
+            us_status = "상승장"
+
+        elif us_total_score <= -10:
+
+            us_status = "약세장"
+
+        else:
+
+            us_status = "중립"
+
+
         return {
-            "S&P500": round(
+
+            "SP500현재가": round(
                 sp500_current,
                 2
             ),
 
-            "S&P500수익률": round(
-                sp500_return,
+            "SP50020일선": round(
+                float(sp500_ma20),
                 2
             ),
 
-            "NASDAQ": round(
+            "SP5005일수익률": round(
+                sp500_return_5,
+                2
+            ),
+
+            "SP500점수": sp500_score,
+
+            "SP500상태": sp500_status,
+
+
+            "NASDAQ현재가": round(
                 nasdaq_current,
                 2
             ),
 
-            "NASDAQ수익률": round(
-                nasdaq_return,
+            "NASDAQ20일선": round(
+                float(nasdaq_ma20),
                 2
-            )
+            ),
+
+            "NASDAQ5일수익률": round(
+                nasdaq_return_5,
+                2
+            ),
+
+            "NASDAQ점수": nasdaq_score,
+
+            "NASDAQ상태": nasdaq_status,
+
+
+            "미국시장점수": us_total_score,
+
+            "미국시장상태": us_status
+
         }
+
 
     except Exception as e:
 
@@ -2072,7 +2202,7 @@ def analyze_us_market():
         )
 
         return None
-
+        
 
 # =========================
 # 메인
@@ -2095,6 +2225,7 @@ print("데이터 다운로드 중...")
 
 market = analyze_market()
 kosdaq = analyze_kosdaq()
+us_market = analyze_us_market()
 
 if market is not None:
 
@@ -2149,6 +2280,54 @@ if kosdaq is not None:
 else:
 
     print("KOSDAQ 상태 : 분석 실패")
+
+if us_market is not None:
+
+    print(
+        f"S&P 500 상태 : "
+        f"{us_market['SP500상태']} "
+        f"({us_market['SP500점수']:+d}점)"
+    )
+
+    print(
+        f"S&P 500 현재가 : "
+        f"{us_market['SP500현재가']}"
+    )
+
+    print(
+        f"S&P 500 20일선 : "
+        f"{us_market['SP50020일선']}"
+    )
+
+    print(
+        f"S&P 500 5일 수익률 : "
+        f"{us_market['SP5005일수익률']:+.2f}%"
+    )
+
+    print(
+        f"NASDAQ 상태 : "
+        f"{us_market['NASDAQ상태']} "
+        f"({us_market['NASDAQ점수']:+d}점)"
+    )
+
+    print(
+        f"NASDAQ 현재가 : "
+        f"{us_market['NASDAQ현재가']}"
+    )
+
+    print(
+        f"NASDAQ 20일선 : "
+        f"{us_market['NASDAQ20일선']}"
+    )
+
+    print(
+        f"NASDAQ 5일 수익률 : "
+        f"{us_market['NASDAQ5일수익률']:+.2f}%"
+    )
+
+else:
+
+    print("미국 시장 상태 : 분석 실패")
     
 
 # =========================
