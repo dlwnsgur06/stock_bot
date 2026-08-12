@@ -2,10 +2,11 @@ import yfinance as yf
 import pandas as pd
 import requests
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import json
 import os
 import time
-
+r
 
 # =========================
 # 중복 알림 방지
@@ -2512,7 +2513,9 @@ print("==============================")
 
 history = load_alert_history()
 
-today = datetime.now().strftime("%Y-%m-%d")
+today = datetime.now(
+    ZoneInfo("Asia/Seoul")
+).strftime("%Y-%m-%d")
 
 for rank, item in enumerate(top_candidates, 1):
 
@@ -2524,7 +2527,7 @@ for rank, item in enumerate(top_candidates, 1):
 
     message = (
         f"[매수 후보 {rank}/{len(top_candidates)}]\n"
-        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+        f"{datetime.now(ZoneInfo('Asia/Seoul')).strftime('%Y-%m-%d %H:%M:%S')}\n\n"
 
         f"종목 : {stock_name}\n"
         f"점수 : {current_score}\n"
@@ -2595,7 +2598,9 @@ for rank, item in enumerate(top_candidates, 1):
             send_telegram(message)
 
             history[today_key]["점수"] = current_score
-            history[today_key]["시간"] = datetime.now().strftime("%H:%M:%S")
+            history[today_key]["시간"] = datetime.now(
+                ZoneInfo("Asia/Seoul")
+            ).strftime("%H:%M:%S")
 
             save_alert_history(history)
 
@@ -2621,7 +2626,9 @@ for rank, item in enumerate(top_candidates, 1):
         history[today_key] = {
             "종목": stock_name,
             "점수": current_score,
-            "시간": datetime.now().strftime("%H:%M:%S")
+            "시간": datetime.now(
+                ZoneInfo("Asia/Seoul")
+            ).strftime("%H:%M:%S")
         }
 
         save_alert_history(history)
