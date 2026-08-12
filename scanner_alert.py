@@ -2495,6 +2495,19 @@ for quick_score, name, ticker in selected_candidates:
 
             market_info = None
 
+        # =========================
+        # 미국시장 점수 반영
+        # =========================
+
+        us_score = 0
+
+        if us_market is not None:
+
+            us_score = (
+                us_market["SP500점수"]
+                + us_market["NASDAQ점수"]
+            )
+
 
         # =========================
         # 국내 시장 점수 반영
