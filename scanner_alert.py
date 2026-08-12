@@ -2622,6 +2622,11 @@ for quick_score, name, ticker in selected_candidates:
 
             market_info = None
 
+
+        # =========================
+        # 국내 시장 점수 반영
+        # =========================
+
         if market_info is not None:
 
             result["점수"] += (
@@ -2646,7 +2651,60 @@ for quick_score, name, ticker in selected_candidates:
 
             result["시장점수"] = 0
 
-        results.append(result)
+
+        # =========================
+        # 미국 시장 점수 반영
+        # =========================
+
+        if us_market is not None:
+
+            us_score = (
+                us_market["미국시장점수"]
+            )
+
+            if us_score >= 15:
+
+                us_market_score = 5
+
+            elif us_score >= 5:
+
+                us_market_score = 3
+
+            elif us_score <= -15:
+
+                us_market_score = -5
+
+            elif us_score <= -5:
+
+                us_market_score = -3
+
+            else:
+
+                us_market_score = 0
+
+
+            result["점수"] += (
+                us_market_score
+            )
+
+            result["미국시장점수"] = (
+                us_market_score
+            )
+
+            result["미국시장상태"] = (
+                us_market["미국시장상태"]
+            )
+
+        else:
+
+            result["미국시장점수"] = 0
+
+            result["미국시장상태"] = "분석 실패"
+
+
+        results.append(
+            result
+        )
 
 
 print()
