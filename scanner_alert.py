@@ -1969,6 +1969,110 @@ def analyze_kosdaq():
 
         return None
 
+# =========================
+# 미국 증시 시장환경 분석
+# =========================
+
+def analyze_us_market():
+
+    try:
+
+        sp500 = yf.download(
+            "^GSPC",
+            period="3mo",
+            interval="1d",
+            auto_adjust=False,
+            progress=False
+        )
+
+        nasdaq = yf.download(
+            "^IXIC",
+            period="3mo",
+            interval="1d",
+            auto_adjust=False,
+            progress=False
+        )
+
+        if sp500.empty or nasdaq.empty:
+            return None
+
+        if isinstance(sp500.columns, pd.MultiIndex):
+            sp500.columns = sp500.columns.get_level_values(0)
+
+        if isinstance(nasdaq.columns, pd.MultiIndex):
+            nasdaq.columns = nasdaq.columns.get_level_values(0)
+
+        sp500 = sp500.dropna()
+        nasdaq = nasdaq.dropna()
+
+        if len(sp500) < 30 or len(nasdaq) < 30:
+            return None
+
+        sp500_close = sp500["Close"]
+        nasdaq_close = nasdaq["Close"]
+
+        # =========================
+        # S&P 500
+        # =========================
+
+        sp500_current = float(
+            sp500_close.iloc[-1]
+        )
+
+        sp500_previous = float(
+            sp500_close.iloc[-2]
+        )
+
+        sp500_return = (
+            sp500_current / sp500_previous - 1
+        ) * 100
+
+        # =========================
+        # NASDAQ
+        # =========================
+
+        nasdaq_current = float(
+            nasdaq_close.iloc[-1]
+        )
+
+        nasdaq_previous = float(
+            nasdaq_close.iloc[-2]
+        )
+
+        nasdaq_return = (
+            nasdaq_current / nasdaq_previous - 1
+        ) * 100
+
+        return {
+            "S&P500": round(
+                sp500_current,
+                2
+            ),
+
+            "S&P500수익률": round(
+                sp500_return,
+                2
+            ),
+
+            "NASDAQ": round(
+                nasdaq_current,
+                2
+            ),
+
+            "NASDAQ수익률": round(
+                nasdaq_return,
+                2
+            )
+        }
+
+    except Exception as e:
+
+        print(
+            f"미국 증시 분석 오류 : {e}"
+        )
+
+        return None
+
 
 # =========================
 # 메인
