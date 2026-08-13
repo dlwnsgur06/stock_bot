@@ -1545,6 +1545,37 @@ def analyze_stock(name, ticker, df=None):
 
             score -= 5
 
+        # =========================
+        # 과열 / 추격매수 위험도
+        # =========================
+
+        if rsi >= 75:
+            score -= 10
+
+        elif rsi >= 70:
+            score -= 5
+
+
+        if stoch_k >= 90:
+            score -= 5
+
+        elif stoch_k >= 80:
+            score -= 2
+
+
+        if return_5 >= 20:
+            score -= 8
+
+        elif return_5 >= 15:
+            score -= 5
+
+
+        if return_20 >= 40:
+            score -= 8
+
+        elif return_20 >= 25:
+            score -= 5
+
 
         # =========================
         # 변동성
