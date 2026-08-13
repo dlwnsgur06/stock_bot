@@ -3198,7 +3198,8 @@ for rank, item in enumerate(top_candidates, 1):
         f"15분봉 거래량 : {item['15분봉거래량']:.2f}배\n\n"
 
         f"신호 : {item['신호']}"
-
+    )
+    
     print()
     print(message)
 
