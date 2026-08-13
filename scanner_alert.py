@@ -3017,6 +3017,19 @@ for item in results:
         buy_forbidden = True
         forbidden_reason = "스토캐스틱 과열 + 단기 급등"
 
+    # 5. 15분봉 RSI 극단적 과열
+    elif item["15분봉RSI"] >= 85:
+        buy_forbidden = True
+        forbidden_reason = "15분봉 RSI 극단적 과열"
+
+    # 6. 15분봉 RSI 과열 + 거래량 급증
+    elif (
+        item["15분봉RSI"] >= 80
+        and item["15분봉거래량"] >= 2
+    ):
+        buy_forbidden = True
+        forbidden_reason = "15분봉 RSI 과열 + 거래량 급증"
+
     if buy_forbidden:
         print(
             f"{name} → 매수 금지 "
