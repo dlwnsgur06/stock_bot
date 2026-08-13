@@ -1795,6 +1795,269 @@ def analyze_stock(name, ticker, df=None):
         )
 
         return None
+
+# =========================
+# 15분봉 단기 타이밍 분석
+# =========================
+
+def analyze_15min(name, ticker):
+
+    try:
+
+        df = yf.download(
+            ticker,
+            period="5d",
+            interval="15m",
+            auto_adjust=False,
+            progress=False
+        )
+
+        if df is None or df.empty:
+            return None
+
+        # =========================
+        # MultiIndex 처리
+        # =========================
+
+        if isinstance(df.columns, pd.MultiIndex):
+
+            df.columns = (
+                df.columns
+                .get_level_values(0)
+            )
+
+        df = df.dropna()
+
+        if len(df) < 30:
+            return None
+
+        close = df["Close"]
+
+        # =========================
+        # EMA
+        # =========================
+
+        ema9 = (
+            close
+            .ewm(span=9, adjust=False)
+            .mean()
+        )
+
+        ema20 = (
+            close
+            .ewm(span=20, adjust=False)
+            .mean()
+        )
+
+        current = float(
+            close.iloc[-1]
+        )
+
+        current_ema9 = float(
+            ema9.iloc[-1]
+        )
+
+        current_ema20 = float(
+            ema20.iloc[-1]
+        )
+
+        # =========================
+        # RSI
+        # =========================
+
+        delta = close.diff()
+
+        gain = delta.clip(
+            lower=0
+        )
+
+        loss = -delta.clip(
+            upper=0
+        )
+
+        avg_gain = (
+            gain
+            .rolling(14)
+            .mean()
+        )
+
+        avg_loss = (
+            loss
+            .rolling(14)
+            .mean()
+        )
+
+        rs = (
+            avg_gain /
+            avg_loss.replace(0, np.nan)
+        )
+
+        rsi = (
+            100 -
+            (100 / (1 + rs))
+        )
+
+        current_rsi = float(
+            rsi.iloc[-1]
+        )
+
+        # =========================
+        # MACD
+        # =========================
+
+        ema12 = (
+            close
+            .ewm(span=12, adjust=False)
+            .mean()
+        )
+
+        ema26 = (
+            close
+            .ewm(span=26, adjust=False)
+            .mean()
+        )
+
+        macd = ema12 - ema26
+
+        signal = (
+            macd
+            .ewm(span=9, adjust=False)
+            .mean()
+        )
+
+        current_macd = float(
+            macd.iloc[-1]
+        )
+
+        current_signal = float(
+            signal.iloc[-1]
+        )
+
+        # =========================
+        # 거래량
+        # =========================
+
+        volume = df["Volume"]
+
+        current_volume = float(
+            volume.iloc[-1]
+        )
+
+        avg_volume = float(
+            volume
+            .iloc[-21:-1]
+            .mean()
+        )
+
+        if avg_volume > 0:
+
+            volume_ratio = (
+                current_volume /
+                avg_volume
+            )
+
+        else:
+
+            volume_ratio = 0
+
+        # =========================
+        # 15분봉 점수
+        # =========================
+
+        score = 0
+
+        # 가격 > EMA9 > EMA20
+        if (
+            current > current_ema9
+            and current_ema9 > current_ema20
+        ):
+
+            score += 2
+
+        elif current > current_ema20:
+
+            score += 1
+
+        elif current < current_ema9 and current < current_ema20:
+
+            score -= 2
+
+        # MACD
+        if current_macd > current_signal:
+
+            score += 2
+
+        else:
+
+            score -= 1
+
+        # RSI
+        if 50 <= current_rsi <= 70:
+
+            score += 1
+
+        elif current_rsi >= 75:
+
+            score -= 1
+
+        elif current_rsi < 40:
+
+            score -= 1
+
+        # 거래량
+        if volume_ratio >= 1.5:
+
+            score += 1
+
+        # =========================
+        # 상태
+        # =========================
+
+        if score >= 4:
+
+            status = "강한 상승"
+
+        elif score >= 2:
+
+            status = "상승"
+
+        elif score <= -2:
+
+            status = "하락"
+
+        else:
+
+            status = "중립"
+
+        return {
+
+            "15분봉점수": score,
+
+            "15분봉상태": status,
+
+            "15분봉현재가": current,
+
+            "15분봉EMA9": current_ema9,
+
+            "15분봉EMA20": current_ema20,
+
+            "15분봉RSI": current_rsi,
+
+            "15분봉MACD": current_macd,
+
+            "15분봉MACD신호": current_signal,
+
+            "15분봉거래량": volume_ratio
+        }
+
+    except Exception as e:
+
+        print(
+            f"{name} 15분봉 분석 오류 : {e}"
+        )
+
+        return None
+        
         
 # =========================
 # 시장환경 분석
@@ -2624,14 +2887,94 @@ for item in results:
 # 매수 후보
 # =========================
 
-candidates = [
+candidates = []
 
-    item
+for item in results:
 
-    for item in results
+    # =========================
+    # 1차 일봉 점수 필터
+    # =========================
 
-    if item["점수"] >= MIN_SCORE
-]
+    if item["점수"] < MIN_SCORE:
+        continue
+
+    name = item["종목"]
+
+    ticker = STOCKS.get(
+        name
+    )
+
+    if ticker is None:
+        continue
+
+    print(
+        f"{name} → "
+        f"15분봉 분석 중..."
+    )
+
+    # =========================
+    # 15분봉 분석
+    # =========================
+
+    intraday = analyze_15min(
+        name,
+        ticker
+    )
+
+    if intraday is None:
+
+        print(
+            f"{name} → "
+            f"15분봉 분석 실패"
+        )
+
+        continue
+
+    # =========================
+    # 15분봉 정보 저장
+    # =========================
+
+    item.update(
+        intraday
+    )
+
+    # =========================
+    # 점수 저장
+    # =========================
+
+    item["일봉점수"] = (
+        item["점수"]
+    )
+
+    item["최종점수"] = (
+        item["일봉점수"]
+        + item["15분봉점수"]
+    )
+
+    item["점수"] = (
+        item["최종점수"]
+    )
+
+    print(
+        f"{name} → "
+        f"일봉 {item['일봉점수']}점 + "
+        f"15분봉 {item['15분봉점수']:+d}점 = "
+        f"최종 {item['점수']}점"
+    )
+
+    candidates.append(
+        item
+    )
+
+
+# =========================
+# 최종 점수순 정렬
+# =========================
+
+candidates.sort(
+    key=lambda x: x["점수"],
+    reverse=True
+)
 
 
 print()
@@ -2659,6 +3002,41 @@ else:
             f"{item['종목']} | "
             f"점수 {item['점수']} | "
             f"RSI {item['RSI']:.2f}"
+        )
+
+        print(
+            f"    일봉 점수 : "
+            f"{item['일봉점수']}"
+        )
+
+        print(
+            f"    15분봉 점수 : "
+            f"{item['15분봉점수']:+d}"
+        )
+
+        print(
+            f"    15분봉 상태 : "
+            f"{item['15분봉상태']}"
+        )
+
+        print(
+            f"    15분봉 RSI : "
+            f"{item['15분봉RSI']:.2f}"
+        )
+
+        print(
+            f"    15분봉 EMA9 : "
+            f"{item['15분봉EMA9']:,.2f}"
+        )
+
+        print(
+            f"    15분봉 EMA20 : "
+            f"{item['15분봉EMA20']:,.2f}"
+        )
+
+        print(
+            f"    15분봉 거래량 : "
+            f"{item['15분봉거래량']:.2f}배"
         )
 
         print(
@@ -2812,8 +3190,14 @@ for rank, item in enumerate(top_candidates, 1):
         f"익절가 : {item['익절가']:,}원 "
         f"(+{item['익절률']}%)\n\n"
 
+        f"15분봉 상태 : {item['15분봉상태']}\n"
+        f"15분봉 점수 : {item['15분봉점수']:+d}\n"
+        f"15분봉 RSI : {item['15분봉RSI']:.2f}\n"
+        f"15분봉 EMA9 : {item['15분봉EMA9']:,.2f}\n"
+        f"15분봉 EMA20 : {item['15분봉EMA20']:,.2f}\n"
+        f"15분봉 거래량 : {item['15분봉거래량']:.2f}배\n\n"
+
         f"신호 : {item['신호']}"
-    )
 
     print()
     print(message)
