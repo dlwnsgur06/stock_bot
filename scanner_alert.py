@@ -2969,6 +2969,48 @@ for item in results:
     item.update(
         intraday
     )
+    
+
+    # =========================
+    # 매수 금지 필터
+    # =========================
+
+    buy_forbidden = False
+    forbidden_reason = ""
+
+    # 1. 15분봉 하락 추세
+    if item["15분봉상태"] == "하락":
+        buy_forbidden = True
+        forbidden_reason = "15분봉 하락 추세"
+
+    # 2. 극단적인 변동성
+    elif item["변동성"] >= 60:
+        buy_forbidden = True
+        forbidden_reason = "극단적 변동성"
+
+    # 3. RSI 과열 + 단기 급등
+    elif (
+        item["RSI"] >= 75
+        and item["5일수익률"] >= 15
+    ):
+        buy_forbidden = True
+        forbidden_reason = "RSI 과열 + 단기 급등"
+
+    # 4. 스토캐스틱 과열 + 단기 급등
+    elif (
+        item["스토캐스틱K"] >= 90
+        and item["5일수익률"] >= 15
+    ):
+        buy_forbidden = True
+        forbidden_reason = "스토캐스틱 과열 + 단기 급등"
+
+    if buy_forbidden:
+        print(
+            f"{name} → 매수 금지 "
+            f"({forbidden_reason})"
+        )
+        continue
+        
 
     # =========================
     # 점수 저장
