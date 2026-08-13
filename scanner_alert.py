@@ -1568,18 +1568,21 @@ def analyze_stock(name, ticker, df=None):
 
 
         # =========================
-        # 고변동성 필터
+        # 변동성 위험도 반영
         # =========================
 
-        if volatility >= 20:
+        if volatility >= 40:
 
-            print(
-                f"{name} 제외 : "
-                f"변동성 {volatility:.2f}%"
-            )
+            score -= 10
 
-            return None
+        elif volatility >= 30:
 
+            score -= 5
+
+        elif volatility >= 20:
+
+            score -= 2
+            
 
         # =========================
         # 손절 / 익절
