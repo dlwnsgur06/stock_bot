@@ -2932,6 +2932,19 @@ for item in results:
 
     name = item["종목"]
 
+    # =========================
+    # 동전주 필터
+    # =========================
+
+    current_price = item.get("현재가", 0)
+
+    if current_price < 5000:
+        print(
+            f"{name} → 후보 제외 "
+            f"(저가주: {current_price:,.0f}원)"
+        )
+        continue
+
     ticker = STOCKS.get(
         name
     )
