@@ -1,5 +1,9 @@
 name: Righthand Stock Alert
 
+concurrency:
+  group: righthand-stock-alert
+  cancel-in-progress: false
+
 on:
   schedule:
     - cron: "*/15 * * * *"
@@ -38,8 +42,11 @@ jobs:
 
           git add alert_history.json holdings.json telegram_update_id.txt
 
-          git diff --cached --quiet || git commit -m "Update bot data"
+          if git diff --cached --quiet; then
+            echo "변경사항 없음"
+            exit 0
+          fi
 
-          git pull --rebase origin main
+          git commit -m "Update bot data"
 
           git push origin main
